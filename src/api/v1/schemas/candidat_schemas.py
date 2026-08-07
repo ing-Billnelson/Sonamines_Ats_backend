@@ -1,0 +1,119 @@
+"""Schemas Pydantic pour les candidats."""
+
+from pydantic import BaseModel, Field
+from typing import Optional, List
+
+from ....domain.entities.document import TypeDocument
+from ....domain.enums import StatutCandidature
+
+
+class SoumettreKandidatureRequest(BaseModel):
+    """Schema de requête pour soumettre une candidature."""
+
+    message_motivation: str = Field(..., min_length=50, description="Message de motivation (minimum 50 caractères)")
+    offre_id: Optional[str] = Field(None, description="ID de l'offre (None pour candidature spontanée)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message_motivation": "Je suis très intéressé par ce poste car il correspond parfaitement à mon profil et à mes aspirations professionnelles...",
+                "offre_id": "123e4567-e89b-12d3-a456-426614174000"
+            }
+        }
+
+
+class DocumentResponse(BaseModel):
+    """Schema de réponse pour un document."""
+
+    id: str
+    type_document: TypeDocument
+    nom_original: str
+    taille_octets: int
+    type_mime: str
+    url_temporaire: Optional[str]
+    date_telechargement: str
+    telechargeur_nom_complet: str
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "type_document": "CV",
+                "nom_original": "CV_Amadou_Diop.pdf",
+                "taille_octets": 1048576,
+                "type_mime": "application/pdf",
+                "url_temporaire": "https://minio.example.com/documents/temp/cv.pdf?expires=3600",
+                "date_telechargement": "2024-01-15T10:30:00Z",
+                "telechargeur_nom_complet": "Amadou Diop"
+            }
+        }
+
+
+class HistoriqueStatutResponse(BaseModel):
+    """Schema de réponse pour l'historique des statuts."""
+
+    id: str
+    ancien_statut: Optional[StatutCandidature]
+    nouveau_statut: StatutCandidature
+    commentaire: Optional[str]
+    utilisateur_nom_complet: str
+    date_changement: str
+
+    class Config:
+        from_attributes = True
+
+
+class CandidatureResponse(BaseModel):
+    """Schema de réponse pour une candidature."""
+
+    id: str
+    numero_reference: str
+    candidat_nom_complet: str
+    candidat_email: str
+    offre_titre: Optional[str]
+    offre_numero_reference: Optional[str]
+    statut: StatutCandidature
+    message_motivation: str
+    notes_internes: Optional[str]
+    date_soumission: str
+    date_derniere_modification: str
+    documents: List[DocumentResponse]
+    historique: List[HistoriqueStatutResponse]
+    est_spontanee: bool
+    est_complete: bool
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "numero_reference": "CAND-2024-ABC12345",
+                "candidat_nom_complet": "Amadou Diop",
+                "candidat_email": "amadou.diop@example.com",
+                "offre_titre": "Ingénieur Logiciel Senior",
+                "offre_numero_reference": "EMPLOI-2024-XYZ67890",
+                "statut": "RECUE",
+                "message_motivation": "Je suis très intéressé par ce poste...",
+                "notes_internes": None,
+                "date_soumission": "2024-01-15T10:30:00Z",
+                "date_derniere_modification": "2024-01-15T10:30:00Z",
+                "documents": [],
+                "historique": [],
+                "est_spontanee": False,
+                "est_complete": True
+            }
+        }
+
+
+class TeleverserDocumentRequest(BaseModel):
+    """Schema pour les métadonnées de téléversement de document."""
+
+    type_document: TypeDocument = Field(..., description="Type de document")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "type_document": "CV"
+            }
+        }
