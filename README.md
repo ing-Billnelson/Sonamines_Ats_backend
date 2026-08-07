@@ -1,3 +1,4 @@
+
 # 🏢 SONAMINES - Plateforme de Candidatures
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -697,3 +698,4 @@ Merci aux contributeurs open source des technologies utilisées et à la communa
 ---
 
 **[⬆ Retour au sommaire](#-table-des-matières)**
+
