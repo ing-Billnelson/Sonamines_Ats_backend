@@ -1,0 +1,213 @@
+
+
+services:
+  # ===================================================================
+  # APPLICATION PRINCIPALE
+  # ===================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: sonamines-candidatures-app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://sonamines:sonamines123@db:5432/sonamines_candidatures
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=admin123
+      - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
+      - LOG_LEVEL=DEBUG
+      - network.host=0.0.0.0
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - sonamines-network
+    restart: unless-stopped
+    command: ["dev"]  # Mode développement avec reload
+
+  # ===================================================================
+  # BASE DE DONNÉES POSTGRESQL
+  # ===================================================================
+  db:
+    image: postgres:15-alpine
+    container_name: sonamines-candidatures-db
+    environment:
+      POSTGRES_DB: sonamines_candidatures
+      POSTGRES_USER: sonamines
+      POSTGRES_PASSWORD: sonamines123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - sonamines-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonamines -d sonamines_candidatures"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===================================================================
+  # ELASTICSEARCH (RECHERCHE FULL-TEXT)
+  # ===================================================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: sonamines-candidatures-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - cluster.name=sonamines-cluster
+      - node.name=sonamines-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - network.host=0.0.0.0
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - sonamines-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # ===================================================================
+  # MINIO (STOCKAGE S3-COMPATIBLE)
+  # ===================================================================
+  minio:
+    image: minio/minio:RELEASE.2023-12-07T04-16-00Z
+    container_name: sonamines-candidatures-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"  # Console web MinIO
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin123
+
+    volumes:
+      - minio_data:/data
+    networks:
+      - sonamines-network
+      
+    restart: unless-stopped
+    #healthcheck:
+      #test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      #interval: 30s
+      #timeout: 20s
+      #retries: 3
+      #start_period: 30s
+    #
+  # ===================================================================
+  # REDIS (CACHE ET SESSIONS)
+  # ===================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: sonamines-candidatures-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sonamines-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  # ===================================================================
+  # KIBANA (INTERFACE ELASTICSEARCH)
+  # ===================================================================
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: sonamines-candidatures-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    ports:
+      - "5601:5601"
+    networks:
+      - sonamines-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - monitoring  # Optionnel, démarrer avec --profile monitoring
+
+  # ===================================================================
+  # PGADMIN (INTERFACE POSTGRESQL)
+  # ===================================================================
+  pgadmin:
+    image: dpage/pgadmin4:8.1
+    container_name: sonamines-candidatures-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sonamines.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8080:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - sonamines-network
+    depends_on:
+      - db
+    restart: unless-stopped
+    profiles:
+      - admin  # Optionnel, démarrer avec --profile admin
+
+# ===================================================================
+# VOLUMES PERSISTANTS
+# ===================================================================
+volumes:
+  postgres_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  minio_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# ===================================================================
+# RÉSEAU
+# ===================================================================
+networks:
+  sonamines-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
