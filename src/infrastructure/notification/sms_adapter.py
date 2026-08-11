@@ -5,7 +5,6 @@ from typing import Dict, Any
 
 from ...domain.entities import Utilisateur
 from ...domain.enums import CanalNotification
-from ...domain.exceptions import CanalNonVerifieError
 from ...domain.ports import NotificationPort
 from ..config import Settings
 
@@ -34,17 +33,10 @@ class SMSAdapter(NotificationPort):
             True si l'envoi a réussi, False sinon
 
         Raises:
-            CanalNonVerifieError: Si le téléphone n'est pas vérifié
             ValueError: Si le canal n'est pas SMS
         """
         if canal != CanalNotification.SMS:
             raise ValueError(f"Canal non supporté par cet adapter: {canal}")
-
-        if not destinataire.telephone_verifie or not destinataire.telephone:
-            raise CanalNonVerifieError(
-                canal.value,
-                "Le numéro de téléphone du destinataire n'est pas vérifié"
-            )
 
         try:
             # Préparer le message SMS

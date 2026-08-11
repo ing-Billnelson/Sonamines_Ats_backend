@@ -5,9 +5,10 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Dict, Any
 
+import structlog
+
 from ...domain.entities import Utilisateur
 from ...domain.enums import CanalNotification
-from ...domain.exceptions import CanalNonVerifieError
 from ...domain.ports import NotificationPort
 from ..config import Settings
 
@@ -17,6 +18,7 @@ class EmailAdapter(NotificationPort):
 
     def __init__(self, settings: Settings):
         self._settings = settings
+        self._logger = structlog.get_logger()
 
     async def envoyer(
         self,
@@ -36,17 +38,10 @@ class EmailAdapter(NotificationPort):
             True si l'envoi a réussi, False sinon
 
         Raises:
-            CanalNonVerifieError: Si l'email n'est pas vérifié
             ValueError: Si le canal n'est pas EMAIL
         """
         if canal != CanalNotification.EMAIL:
             raise ValueError(f"Canal non supporté par cet adapter: {canal}")
-
-        if not destinataire.email_verifie:
-            raise CanalNonVerifieError(
-                canal.value,
-                "L'adresse email du destinataire n'est pas vérifiée"
-            )
 
         try:
             # Créer le message
@@ -58,8 +53,12 @@ class EmailAdapter(NotificationPort):
             return True
 
         except Exception as e:
-            # TODO: Logger l'erreur
-            print(f"Erreur lors de l'envoi d'email: {e}")
+            self._logger.error(
+                "Erreur lors de l'envoi d'email",
+                type=type(e).__name__,
+                message=str(e),
+                destinataire=str(destinataire.email),
+            )
             return False
 
     def _creer_message_email(self, destinataire: Utilisateur, contenu: str) -> MIMEMultipart:
@@ -67,7 +66,7 @@ class EmailAdapter(NotificationPort):
         message = MIMEMultipart("alternative")
         
         # En-têtes
-        message["From"] = self._settings.smtp_username
+        message["From"] = self._settings.smtp_from_address
         message["To"] = str(destinataire.email)
         message["Subject"] = "Notification SONAMINES - Plateforme Candidatures"
 

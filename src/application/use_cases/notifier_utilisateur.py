@@ -1,5 +1,7 @@
 """Use case central pour la notification des utilisateurs."""
 
+import structlog
+
 from ...domain.entities import Notification, Utilisateur
 from ...domain.enums import CanalNotification, TypeEvenement
 from ...domain.exceptions import CanalNonVerifieError
@@ -22,6 +24,7 @@ class NotifierUtilisateurUseCase:
     ):
         self._notification_repository = notification_repository
         self._notification_port = notification_port
+        self._logger = structlog.get_logger()
 
     async def executer(
         self,
@@ -55,8 +58,13 @@ class NotifierUtilisateurUseCase:
 
         # 2. Envoi externe : UN SEUL canal, celui actuellement configuré
         if utilisateur.canal_validation.is_external:
-            # Vérifier que le canal est vérifié
-            if not self._canal_est_verifie(utilisateur):
+            # COMPTE_CREE : le code de validation est envoyé pour permettre la
+            # vérification — le canal ne peut donc pas encore être vérifié, on
+            # envoie directement sans passer par _canal_est_verifie().
+            if evenement == TypeEvenement.COMPTE_CREE:
+                pass
+            # Autres événements : n'envoyer que si le canal est déjà vérifié.
+            elif not self._canal_est_verifie(utilisateur):
                 # Ne pas bloquer la notification interne, mais ne pas envoyer
                 # L'utilisateur sera notifié via l'interface de l'erreur
                 return
@@ -68,11 +76,15 @@ class NotifierUtilisateurUseCase:
                     canal=utilisateur.canal_validation,
                     contenu=contenu,
                 )
-            except Exception:
-                # L'échec de l'envoi externe ne doit pas impacter
-                # la notification interne déjà persistée
-                # TODO: Logger l'erreur pour suivi des échecs d'envoi
-                pass
+            except Exception as e:
+                self._logger.error(
+                    "Erreur lors de l'envoi externe de la notification",
+                    type=type(e).__name__,
+                    message=str(e),
+                    utilisateur_id=str(utilisateur.id),
+                    evenement=evenement.value,
+                    canal=utilisateur.canal_validation.value,
+                )
 
     def _canal_est_verifie(self, utilisateur: Utilisateur) -> bool:
         """Vérifie si le canal de validation de l'utilisateur est vérifié."""
