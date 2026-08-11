@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from ..domain.exceptions import (
     DomainException,
@@ -22,6 +23,7 @@ from ..domain.exceptions import (
     OffreClotureeError,
 )
 from ..infrastructure.config import settings
+from ..infrastructure.db.session import engine
 from .v1.routers import (
     admin_router,
     auth_router,
@@ -42,8 +44,22 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("🚀 Démarrage de l'API SONAMINES Candidatures")
     
-    # TODO: Initialiser les connexions aux services externes
-    # - Base de données PostgreSQL
+    # Vérification de la connexion à la base de données
+    try:
+        # Test de connexion simple
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        logger.info("✅ Connexion à la base de données PostgreSQL établie", 
+                   database_url=settings.database_url.split('@')[1])  # Log sans credentials
+    except Exception as e:
+        logger.error("❌ Échec de connexion à la base de données", error=str(e))
+        raise
+    
+    logger.info("🗄️ Engine de base de données configuré et prêt", 
+               pool_size=engine.pool.size(), 
+               max_overflow=engine.pool._max_overflow)
+    
+    # TODO: Initialiser les autres services externes
     # - Elasticsearch
     # - MinIO
     # - Vérifier les buckets MinIO
@@ -54,8 +70,12 @@ async def lifespan(app: FastAPI):
     # Shutdown
     logger.info("🛑 Arrêt de l'API SONAMINES Candidatures")
     
-    # TODO: Nettoyer les connexions
-    # - Fermer la pool de connexions DB
+    # Fermeture propre du pool de connexions
+    logger.info("🔌 Fermeture du pool de connexions de base de données...")
+    await engine.dispose()
+    logger.info("✅ Pool de connexions fermé proprement")
+    
+    # TODO: Nettoyer les autres connexions
     # - Fermer les clients ES et MinIO
 
 
