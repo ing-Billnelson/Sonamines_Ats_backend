@@ -18,27 +18,87 @@ class PostgresCandidatureRepository(CandidatureRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
+    def _model_vers_entite(self, model: CandidatureModel) -> Candidature:
+        """Convertit un modèle SQLAlchemy en entité domaine."""
+        return Candidature(
+            id=model.id,
+            numero_reference=NumeroReference(model.numero_reference),
+            candidat_id=model.candidat_id,
+            offre_id=model.offre_id,
+            statut=model.statut,
+            message_motivation=model.message_motivation,
+            date_soumission=model.date_soumission,
+            date_derniere_modification=model.date_derniere_modification,
+            notes_internes=model.notes_internes,
+            documents=[],
+        )
+
     async def sauvegarder(self, candidature: Candidature) -> Candidature:
         """Sauvegarde une candidature et retourne l'entité mise à jour."""
-        # TODO: Implémenter la conversion entité -> modèle -> entité
-        return candidature
+        query = select(CandidatureModel).where(CandidatureModel.id == candidature.id)
+        result = await self._session.execute(query)
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            model = CandidatureModel(
+                id=candidature.id,
+                numero_reference=str(candidature.numero_reference),
+                candidat_id=candidature.candidat_id,
+                offre_id=candidature.offre_id,
+                statut=candidature.statut,
+                message_motivation=candidature.message_motivation,
+                date_soumission=candidature.date_soumission,
+                date_derniere_modification=candidature.date_derniere_modification,
+                notes_internes=candidature.notes_internes,
+            )
+            self._session.add(model)
+        else:
+            model.numero_reference = str(candidature.numero_reference)
+            model.candidat_id = candidature.candidat_id
+            model.offre_id = candidature.offre_id
+            model.statut = candidature.statut
+            model.message_motivation = candidature.message_motivation
+            model.date_soumission = candidature.date_soumission
+            model.date_derniere_modification = candidature.date_derniere_modification
+            model.notes_internes = candidature.notes_internes
+
+        await self._session.flush()
+        return self._model_vers_entite(model)
 
     async def obtenir_par_id(self, candidature_id: UUID) -> Optional[Candidature]:
         """Récupère une candidature par son ID."""
-        # TODO: Implémenter la récupération et conversion
-        return None
+        query = select(CandidatureModel).where(CandidatureModel.id == candidature_id)
+        result = await self._session.execute(query)
+        model = result.scalar_one_or_none()
+
+        if not model:
+            return None
+
+        return self._model_vers_entite(model)
 
     async def obtenir_par_numero_reference(
         self, numero_reference: NumeroReference
     ) -> Optional[Candidature]:
         """Récupère une candidature par son numéro de référence."""
-        # TODO: Implémenter la récupération et conversion
-        return None
+        query = select(CandidatureModel).where(
+            CandidatureModel.numero_reference == str(numero_reference)
+        )
+        result = await self._session.execute(query)
+        model = result.scalar_one_or_none()
+
+        if not model:
+            return None
+
+        return self._model_vers_entite(model)
 
     async def lister_par_candidat(self, candidat_id: UUID) -> list[Candidature]:
         """Liste toutes les candidatures d'un candidat."""
-        # TODO: Implémenter la récupération et conversion
-        return []
+        query = select(CandidatureModel).where(
+            CandidatureModel.candidat_id == candidat_id
+        )
+        result = await self._session.execute(query)
+        models = result.scalars().all()
+        return [self._model_vers_entite(model) for model in models]
 
     async def lister_par_offre(self, offre_id: UUID) -> list[Candidature]:
         """Liste toutes les candidatures pour une offre."""
@@ -70,8 +130,18 @@ class PostgresCandidatureRepository(CandidatureRepository):
     async def sauvegarder_historique_statut(
         self, historique: HistoriqueStatut
     ) -> HistoriqueStatut:
-        """Sauvegarde un historique de statut."""
-        # TODO: Implémenter la conversion entité -> modèle -> entité
+        """Sauvegarde un historique de statut (toujours un nouvel enregistrement)."""
+        model = HistoriqueStatutModel(
+            id=historique.id,
+            candidature_id=historique.candidature_id,
+            utilisateur_id=historique.utilisateur_id,
+            ancien_statut=historique.ancien_statut,
+            nouveau_statut=historique.nouveau_statut,
+            commentaire=historique.commentaire,
+            date_changement=historique.date_changement,
+        )
+        self._session.add(model)
+        await self._session.flush()
         return historique
 
     async def obtenir_historique_candidature(

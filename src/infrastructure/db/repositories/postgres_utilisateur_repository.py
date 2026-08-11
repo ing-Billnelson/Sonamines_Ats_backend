@@ -141,9 +141,8 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
         
         if not model:
             return None
-        
-        # TODO: Implémenter la conversion modèle -> entité
-        return None
+
+        return self._model_vers_entite(model)
 
     async def obtenir_admin_rh_par_id(
         self, admin_id: UUID

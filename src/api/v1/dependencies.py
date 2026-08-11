@@ -176,12 +176,16 @@ def get_televerser_photo_profil_use_case() -> TeleverserPhotoProfilUseCase:
     )
 
 
-def get_soumettre_candidature_spontanee_use_case() -> SoumettreCandidatureSpontaneeUseCase:
+def get_soumettre_candidature_spontanee_use_case(
+    candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+) -> SoumettreCandidatureSpontaneeUseCase:
     """Factory pour le use case de candidature spontanée."""
-    # TODO: Implémenter l'injection des vraies dépendances
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Use case non configuré"},
+    return SoumettreCandidatureSpontaneeUseCase(
+        candidature_repository=candidature_repository,
+        utilisateur_repository=utilisateur_repository,
+        notifier_utilisateur=notifier_utilisateur,
     )
 
 
