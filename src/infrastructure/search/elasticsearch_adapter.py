@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch
-from elasticsearch.exceptions import ElasticsearchException
+from elasticsearch.exceptions import ApiError, TransportError
 
 from ...domain.entities import Candidature, Offre
 from ...domain.ports import SearchPort
@@ -31,7 +31,7 @@ class ElasticsearchAdapter(SearchPort):
                 body=document,
             )
             return True
-        except ElasticsearchException:
+        except (ApiError, TransportError):
             return False
 
     async def indexer_candidature(self, candidature: Candidature) -> bool:
@@ -45,7 +45,7 @@ class ElasticsearchAdapter(SearchPort):
                 body=document,
             )
             return True
-        except ElasticsearchException:
+        except (ApiError, TransportError):
             return False
 
     async def supprimer_offre_index(self, offre_id: UUID) -> bool:
@@ -56,7 +56,7 @@ class ElasticsearchAdapter(SearchPort):
                 id=str(offre_id),
             )
             return True
-        except ElasticsearchException:
+        except (ApiError, TransportError):
             return False
 
     async def supprimer_candidature_index(self, candidature_id: UUID) -> bool:
@@ -67,7 +67,7 @@ class ElasticsearchAdapter(SearchPort):
                 id=str(candidature_id),
             )
             return True
-        except ElasticsearchException:
+        except (ApiError, TransportError):
             return False
 
     async def rechercher_offres(
@@ -91,7 +91,7 @@ class ElasticsearchAdapter(SearchPort):
             )
             
             return self._traiter_reponse_recherche(response)
-        except ElasticsearchException:
+        except (ApiError, TransportError):
             return []
 
     async def rechercher_candidatures(
@@ -115,7 +115,7 @@ class ElasticsearchAdapter(SearchPort):
             )
             
             return self._traiter_reponse_recherche(response)
-        except ElasticsearchException:
+        except (ApiError, TransportError):
             return []
 
     async def reinitialiser_index_offres(self) -> bool:
@@ -131,7 +131,7 @@ class ElasticsearchAdapter(SearchPort):
                 body={"mappings": mapping}
             )
             return True
-        except ElasticsearchException:
+        except (ApiError, TransportError):
             return False
 
     async def reinitialiser_index_candidatures(self) -> bool:
@@ -147,7 +147,7 @@ class ElasticsearchAdapter(SearchPort):
                 body={"mappings": mapping}
             )
             return True
-        except ElasticsearchException:
+        except (ApiError, TransportError):
             return False
 
     def _offre_vers_document(self, offre: Offre) -> Dict[str, Any]:

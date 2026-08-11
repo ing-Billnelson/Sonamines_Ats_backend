@@ -3,6 +3,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from argon2 import PasswordHasher
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...application.use_cases import (
     CreerCompteCandidatUseCase,
@@ -15,16 +16,86 @@ from ...application.use_cases import (
     ListerNotificationsUseCase,
     MarquerNotificationLueUseCase,
     NotifierUtilisateurUseCase,
+    ValiderCompteUseCase,
 )
 from ...application.dto import UtilisateurDTO
 from ...domain.exceptions import AuthentificationEchoueeError
+from ...domain.ports import NotificationRepository
 from ...infrastructure.config import settings
+from ...infrastructure.db.session import get_db
+from ...infrastructure.db.repositories import (
+    PostgresUtilisateurRepository,
+    PostgresCandidatureRepository,
+    PostgresOffreRepository,
+    PostgresNotificationRepository,
+)
+from ...infrastructure.notification import EmailAdapter, SMSAdapter, NotificationRouter
+from ...infrastructure.search import ElasticsearchAdapter
+from ...infrastructure.storage import MinioAdapter
 
 # Configuration de la sécurité
 security = HTTPBearer()
 
 
-# Singletons et factories
+# === Repositories & Adapters d'infrastructure ===
+
+def get_utilisateur_repository(
+    session: AsyncSession = Depends(get_db)
+) -> PostgresUtilisateurRepository:
+    """Factory pour le repository utilisateur PostgreSQL."""
+    return PostgresUtilisateurRepository(session)
+
+
+def get_candidature_repository(
+    session: AsyncSession = Depends(get_db)
+) -> PostgresCandidatureRepository:
+    """Factory pour le repository candidature PostgreSQL."""
+    return PostgresCandidatureRepository(session)
+
+
+def get_offre_repository(
+    session: AsyncSession = Depends(get_db)
+) -> PostgresOffreRepository:
+    """Factory pour le repository offre PostgreSQL."""
+    return PostgresOffreRepository(session)
+
+
+def get_notification_repository(
+    session: AsyncSession = Depends(get_db)
+) -> PostgresNotificationRepository:
+    """Factory pour le repository notification PostgreSQL."""
+    return PostgresNotificationRepository(session)
+
+
+def get_email_adapter() -> EmailAdapter:
+    """Factory pour l'adapter email."""
+    return EmailAdapter(settings)
+
+
+def get_sms_adapter() -> SMSAdapter:
+    """Factory pour l'adapter SMS."""
+    return SMSAdapter(settings)
+
+
+def get_notification_router(
+    email_adapter: EmailAdapter = Depends(get_email_adapter),
+    sms_adapter: SMSAdapter = Depends(get_sms_adapter),
+) -> NotificationRouter:
+    """Factory pour le routeur de notifications composite."""
+    return NotificationRouter(email_adapter=email_adapter, sms_adapter=sms_adapter)
+
+
+def get_search_adapter() -> ElasticsearchAdapter:
+    """Factory pour l'adapter Elasticsearch."""
+    return ElasticsearchAdapter(settings)
+
+
+def get_storage_adapter() -> MinioAdapter:
+    """Factory pour l'adapter MinIO."""
+    return MinioAdapter(settings)
+
+
+# === Utilitaires ===
 def get_password_hasher() -> PasswordHasher:
     """Retourne une instance du hasher de mots de passe."""
     return PasswordHasher()
@@ -35,37 +106,55 @@ def get_settings():
     return settings
 
 
-# Use cases factories (stubs pour l'instant)
-def get_creer_compte_candidat_use_case() -> CreerCompteCandidatUseCase:
-    """Factory pour le use case de création de compte candidat."""
-    # TODO: Implémenter l'injection des vraies dépendances
-    password_hasher = get_password_hasher()
-    # Ces imports seront à faire quand les repositories seront implémentés
-    # return CreerCompteCandidatUseCase(
-    #     utilisateur_repository=get_utilisateur_repository(),
-    #     notifier_utilisateur=get_notifier_utilisateur_use_case(),
-    #     password_hasher=password_hasher,
-    # )
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Use case non configuré"},
+# === Use cases factories ===
+
+def get_notifier_utilisateur_use_case(
+    notification_repository: NotificationRepository = Depends(get_notification_repository),
+    notification_port: NotificationRouter = Depends(get_notification_router),
+) -> NotifierUtilisateurUseCase:
+    """Factory pour le use case de notification des utilisateurs."""
+    return NotifierUtilisateurUseCase(
+        notification_repository=notification_repository,
+        notification_port=notification_port,
     )
 
 
-def get_authentifier_use_case() -> AuthentifierUseCase:
+def get_creer_compte_candidat_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+    password_hasher: PasswordHasher = Depends(get_password_hasher),
+) -> CreerCompteCandidatUseCase:
+    """Factory pour le use case de création de compte candidat."""
+    return CreerCompteCandidatUseCase(
+        utilisateur_repository=utilisateur_repository,
+        notifier_utilisateur=notifier_utilisateur,
+        password_hasher=password_hasher,
+    )
+
+
+def get_authentifier_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    password_hasher: PasswordHasher = Depends(get_password_hasher),
+    app_settings = Depends(get_settings),
+) -> AuthentifierUseCase:
     """Factory pour le use case d'authentification."""
-    # TODO: Implémenter l'injection des vraies dépendances
-    password_hasher = get_password_hasher()
-    # return AuthentifierUseCase(
-    #     utilisateur_repository=get_utilisateur_repository(),
-    #     password_hasher=password_hasher,
-    #     jwt_secret_key=settings.jwt_secret_key,
-    #     jwt_algorithm=settings.jwt_algorithm,
-    #     jwt_expire_minutes=settings.jwt_access_token_expire_minutes,
-    # )
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Use case non configuré"},
+    return AuthentifierUseCase(
+        utilisateur_repository=utilisateur_repository,
+        password_hasher=password_hasher,
+        jwt_secret_key=app_settings.jwt_secret_key,
+        jwt_algorithm=app_settings.jwt_algorithm,
+        jwt_expire_minutes=app_settings.jwt_access_token_expire_minutes,
+    )
+
+
+def get_valider_compte_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+) -> ValiderCompteUseCase:
+    """Factory pour le use case de validation de compte."""
+    return ValiderCompteUseCase(
+        utilisateur_repository=utilisateur_repository,
+        notifier_utilisateur=notifier_utilisateur,
     )
 
 
@@ -123,7 +212,7 @@ def get_marquer_notification_lue_use_case() -> MarquerNotificationLueUseCase:
     )
 
 
-# Authentification et autorisation
+# === Authentification et autorisation ===
 async def get_utilisateur_courant(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     auth_use_case: AuthentifierUseCase = Depends(get_authentifier_use_case),
