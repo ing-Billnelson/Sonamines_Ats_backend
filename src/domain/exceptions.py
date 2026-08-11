@@ -125,6 +125,14 @@ class CandidatureIntrouvableError(DomainException):
         self.message = message
 
 
+class CodeValidationInvalideError(DomainException):
+    """Erreur levée quand le code de validation est incorrect ou expiré."""
+
+    def __init__(self, message: str = "Code de validation incorrect ou expiré"):
+        super().__init__(message)
+        self.message = message
+
+
 class StatutCandidatureInvalideError(DomainException):
     """Erreur levée lors d'une transition de statut invalide."""
 

@@ -97,6 +97,10 @@ class Settings(BaseSettings):
         default=True,
         description="Utiliser TLS pour SMTP"
     )
+    smtp_from_address: str = Field(
+        default="noreply@sonamines.com",
+        description="Adresse d'expéditeur affichée pour les emails sortants"
+    )
 
     # SMS
     sms_api_key: str = Field(

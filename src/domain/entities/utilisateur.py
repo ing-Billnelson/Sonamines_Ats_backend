@@ -1,8 +1,9 @@
 """Entité utilisateur abstraite."""
 
+import secrets
 from abc import ABC
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -27,6 +28,8 @@ class Utilisateur(ABC):
     date_creation: datetime
     date_derniere_connexion: Optional[datetime] = None
     date_modification: Optional[datetime] = None
+    code_validation: Optional[str] = None
+    code_validation_expiration: Optional[datetime] = None
 
     @classmethod
     def creer_nouveau(
@@ -54,6 +57,21 @@ class Utilisateur(ABC):
             date_derniere_connexion=None,
             date_modification=None,
         )
+
+    def generer_code_validation(self) -> None:
+        """Génère un code de validation numérique à 6 chiffres (valable 5 minutes)."""
+        self.code_validation = f"{secrets.randbelow(1000000):06d}"
+        self.code_validation_expiration = datetime.utcnow() + timedelta(minutes=5)
+
+    def code_validation_est_valide(self, code: str) -> bool:
+        """Vérifie si le code fourni correspond et n'est pas expiré."""
+        if not self.code_validation or not self.code_validation_expiration:
+            return False
+        if self.code_validation != code:
+            return False
+        if datetime.utcnow() > self.code_validation_expiration:
+            return False
+        return True
 
     def valider_compte(self) -> None:
         """Valide le compte utilisateur."""
