@@ -76,8 +76,11 @@ class CreerCompteCandidatUseCase:
         await self._notifier_utilisateur.executer(
             utilisateur=candidat_sauvegarde,
             evenement=TypeEvenement.COMPTE_CREE,
-            contenu=f"Votre compte candidat a été créé avec succès. "
-            f"Un code de validation a été envoyé via {donnees.canal_validation.value}.",
+            contenu=(
+                f"Votre compte candidat a été créé avec succès. Votre code de "
+                f"validation est {candidat_sauvegarde.code_validation}. Ce code "
+                "expire dans 5 minutes."
+            ),
         )
 
         # Convertir en DTO pour la réponse

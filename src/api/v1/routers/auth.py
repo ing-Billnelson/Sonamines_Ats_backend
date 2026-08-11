@@ -26,7 +26,7 @@ from ..schemas import (
     UtilisateurResponse,
     SuccessResponse,
 )
-from ..dependencies import get_creer_compte_candidat_use_case, get_authentifier_use_case
+from ..dependencies import get_creer_compte_candidat_use_case, get_authentifier_use_case, get_valider_compte_use_case
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 security = HTTPBearer()
@@ -95,14 +95,46 @@ async def creer_compte_candidat(
 )
 async def valider_compte(
     donnees: ValiderCompteRequest,
-    # use_case: ValiderCompteUseCase = Depends(get_valider_compte_use_case),
+    use_case: ValiderCompteUseCase = Depends(get_valider_compte_use_case),
 ):
     """Valide un compte utilisateur."""
-    # TODO: Implémenter avec le use case réel
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Endpoint en cours d'implémentation"},
-    )
+    try:
+        # Convertir le schema en DTO
+        dto = ValiderCompteDTO(
+            email=donnees.email,
+            code_validation=donnees.code_validation,
+        )
+
+        # Exécuter le use case
+        utilisateur_dto = await use_case.executer(dto)
+
+        # Convertir en schema de réponse
+        return UtilisateurResponse(
+            id=utilisateur_dto.id,
+            email=utilisateur_dto.email,
+            telephone=utilisateur_dto.telephone,
+            nom=utilisateur_dto.nom,
+            prenom=utilisateur_dto.prenom,
+            nom_complet=utilisateur_dto.nom_complet,
+            statut=utilisateur_dto.statut,
+            canal_validation=utilisateur_dto.canal_validation,
+            email_verifie=utilisateur_dto.email_verifie,
+            telephone_verifie=utilisateur_dto.telephone_verifie,
+            date_creation=utilisateur_dto.date_creation,
+            date_derniere_connexion=utilisateur_dto.date_derniere_connexion,
+            photo_url=utilisateur_dto.photo_url,
+        )
+
+    except UtilisateurIntrouvableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "UtilisateurIntrouvable", "message": str(e)},
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"error": "ValidationError", "message": str(e)},
+        )
 
 
 @router.post(

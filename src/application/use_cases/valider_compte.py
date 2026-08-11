@@ -2,7 +2,7 @@
 
 from ...domain.entities import Utilisateur
 from ...domain.enums import StatutCompte, TypeEvenement
-from ...domain.exceptions import UtilisateurIntrouvableError
+from ...domain.exceptions import CodeValidationInvalideError, UtilisateurIntrouvableError
 from ...domain.ports import UtilisateurRepository
 from ...domain.value_objects import Email
 from ..dto import UtilisateurDTO, ValiderCompteDTO
@@ -32,7 +32,8 @@ class ValiderCompteUseCase:
 
         Raises:
             UtilisateurIntrouvableError: Si l'utilisateur n'existe pas
-            ValueError: Si le code de validation est incorrect
+            CodeValidationInvalideError: Si le code de validation est incorrect ou expiré
+            ValueError: Si le compte est déjà validé
         """
         # Récupérer l'utilisateur par email
         email = Email(donnees.email)
@@ -45,14 +46,9 @@ class ValiderCompteUseCase:
         if utilisateur.statut == StatutCompte.ACTIF:
             raise ValueError("Le compte est déjà validé")
 
-        # TODO: Implémenter la vérification du code de validation
-        # Pour l'instant, on simule une validation réussie
-        # Dans une implémentation complète, il faudrait :
-        # 1. Stocker les codes de validation (Redis, DB temporaire)
-        # 2. Vérifier l'expiration du code
-        # 3. Vérifier que le code correspond
-        if not self._verifier_code_validation(utilisateur, donnees.code_validation):
-            raise ValueError("Code de validation incorrect ou expiré")
+        # Vérifier le code de validation fourni par l'utilisateur
+        if not utilisateur.code_validation_est_valide(donnees.code_validation):
+            raise CodeValidationInvalideError()
 
         # Valider le compte
         utilisateur.valider_compte()
@@ -76,21 +72,6 @@ class ValiderCompteUseCase:
 
         # Convertir en DTO pour la réponse
         return self._convertir_en_dto(utilisateur_sauvegarde)
-
-    def _verifier_code_validation(
-        self, utilisateur: Utilisateur, code: str
-    ) -> bool:
-        """
-        Vérifie si le code de validation est correct.
-
-        TODO: Implémenter la logique de vérification réelle.
-        """
-        # Implémentation simplifiée pour le scaffold
-        # Dans une vraie application :
-        # - Récupérer le code stocké (Redis/DB)
-        # - Vérifier l'expiration
-        # - Comparer les codes
-        return len(code) >= 6  # Validation basique
 
     def _convertir_en_dto(self, utilisateur: Utilisateur) -> UtilisateurDTO:
         """Convertit un utilisateur en DTO."""
