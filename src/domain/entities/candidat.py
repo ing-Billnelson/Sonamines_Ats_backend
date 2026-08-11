@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from ..enums import CanalNotification, StatutCompte
 from ..value_objects import Email, NumeroTelephone
@@ -27,7 +27,7 @@ class Candidat(Utilisateur):
         canal_validation: CanalNotification,
     ) -> "Candidat":
         """Crée un nouveau candidat avec les valeurs par défaut."""
-        return cls(
+        candidat = cls(
             id=uuid4(),
             email=email,
             telephone=telephone,
@@ -43,6 +43,8 @@ class Candidat(Utilisateur):
             date_modification=None,
             photo_url=None,
         )
+        candidat.generer_code_validation()
+        return candidat
 
     def definir_photo_profil(self, photo_url: str) -> None:
         """Définit l'URL de la photo de profil du candidat."""

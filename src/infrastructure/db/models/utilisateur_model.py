@@ -32,6 +32,10 @@ class UtilisateurModel(Base):
     email_verifie = Column(Boolean, nullable=False, default=False)
     telephone_verifie = Column(Boolean, nullable=False, default=False)
     
+    # Code de validation
+    code_validation = Column(String, nullable=True)
+    code_validation_expiration = Column(DateTime, nullable=True)
+    
     # Dates
     date_creation = Column(DateTime, nullable=False, default=datetime.utcnow)
     date_derniere_connexion = Column(DateTime, nullable=True)
