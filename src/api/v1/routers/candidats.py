@@ -16,6 +16,8 @@ from ....domain.entities.document import TypeDocument
 from ....domain.exceptions import (
     UtilisateurIntrouvableError,
     OffreClotureeError,
+    OffreIntrouvableError,
+    CandidatureDejaExistanteError,
     CandidatureNonEligibleError,
 )
 from ..schemas import (
@@ -27,6 +29,7 @@ from ..schemas import (
 from ..dependencies import (
     get_utilisateur_courant,
     get_soumettre_candidature_spontanee_use_case,
+    get_postuler_offre_use_case,
     get_televerser_document_use_case,
 )
 
@@ -105,14 +108,56 @@ async def postuler_offre(
     offre_id: str,
     donnees: SoumettreKandidatureRequest,
     utilisateur_courant = Depends(get_utilisateur_courant),
-    # use_case: PostulerOffreUseCase = Depends(get_postuler_offre_use_case),
+    use_case: PostulerOffreUseCase = Depends(get_postuler_offre_use_case),
 ):
     """Postule à une offre spécifique."""
-    # TODO: Implémenter avec le use case réel
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Endpoint en cours d'implémentation"},
-    )
+    try:
+        dto = SoumettreKandidatureDTO(
+            candidat_id=utilisateur_courant.id,
+            message_motivation=donnees.message_motivation,
+            offre_id=offre_id,
+        )
+
+        candidature_dto = await use_case.executer(dto)
+
+        return CandidatureResponse(
+            id=candidature_dto.id,
+            numero_reference=candidature_dto.numero_reference,
+            candidat_nom_complet=candidature_dto.candidat_nom_complet,
+            candidat_email=candidature_dto.candidat_email,
+            offre_titre=candidature_dto.offre_titre,
+            offre_numero_reference=candidature_dto.offre_numero_reference,
+            statut=candidature_dto.statut,
+            message_motivation=candidature_dto.message_motivation,
+            notes_internes=candidature_dto.notes_internes,
+            date_soumission=candidature_dto.date_soumission,
+            date_derniere_modification=candidature_dto.date_derniere_modification,
+            documents=candidature_dto.documents,
+            historique=candidature_dto.historique,
+            est_spontanee=candidature_dto.est_spontanee,
+            est_complete=candidature_dto.est_complete,
+        )
+
+    except OffreIntrouvableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "OffreIntrouvable", "message": str(e)},
+        )
+    except UtilisateurIntrouvableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "UtilisateurIntrouvable", "message": str(e)},
+        )
+    except OffreClotureeError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"error": "OffreIndisponible", "message": str(e)},
+        )
+    except CandidatureDejaExistanteError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error": "CandidatureDejaExistante", "message": str(e)},
+        )
 
 
 @router.get(
