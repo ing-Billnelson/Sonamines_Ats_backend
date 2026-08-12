@@ -24,6 +24,7 @@ from ...application.use_cases import (
     CreerOffreUseCase,
     PublierOffreUseCase,
     CloturerOffreUseCase,
+    RechercherOffresUseCase,
 )
 from ...application.dto import UtilisateurDTO
 from ...domain.entities import AdministrateurRH, SuperAdministrateur
@@ -255,6 +256,15 @@ def get_cloturer_offre_use_case(
     return CloturerOffreUseCase(
         offre_repository=offre_repository,
         utilisateur_repository=utilisateur_repository,
+    )
+
+
+def get_rechercher_offres_use_case(
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+) -> RechercherOffresUseCase:
+    """Factory pour le use case de recherche d'offres."""
+    return RechercherOffresUseCase(
+        offre_repository=offre_repository,
     )
 
 
