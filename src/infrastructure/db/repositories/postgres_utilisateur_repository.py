@@ -101,15 +101,93 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
 
     async def sauvegarder_admin_rh(self, admin: AdministrateurRH) -> AdministrateurRH:
         """Sauvegarde un administrateur RH et retourne l'entité mise à jour."""
-        # TODO: Implémenter la conversion entité -> modèle -> entité
-        return admin
+        query = select(AdministrateurRHModel).where(AdministrateurRHModel.id == admin.id)
+        result = await self._session.execute(query)
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            model = AdministrateurRHModel(
+                id=admin.id,
+                email=str(admin.email),
+                telephone=str(admin.telephone) if admin.telephone else None,
+                mot_de_passe_hash=admin.mot_de_passe_hash,
+                nom=admin.nom,
+                prenom=admin.prenom,
+                statut=admin.statut,
+                canal_validation=admin.canal_validation,
+                email_verifie=admin.email_verifie,
+                telephone_verifie=admin.telephone_verifie,
+                code_validation=admin.code_validation,
+                code_validation_expiration=admin.code_validation_expiration,
+                date_creation=admin.date_creation,
+                date_derniere_connexion=admin.date_derniere_connexion,
+                date_modification=admin.date_modification,
+            )
+            self._session.add(model)
+        else:
+            model.email = str(admin.email)
+            model.telephone = str(admin.telephone) if admin.telephone else None
+            model.mot_de_passe_hash = admin.mot_de_passe_hash
+            model.nom = admin.nom
+            model.prenom = admin.prenom
+            model.statut = admin.statut
+            model.canal_validation = admin.canal_validation
+            model.email_verifie = admin.email_verifie
+            model.telephone_verifie = admin.telephone_verifie
+            model.code_validation = admin.code_validation
+            model.code_validation_expiration = admin.code_validation_expiration
+            model.date_creation = admin.date_creation
+            model.date_derniere_connexion = admin.date_derniere_connexion
+            model.date_modification = admin.date_modification
+
+        await self._session.flush()
+        return self._model_vers_entite(model)
 
     async def sauvegarder_super_admin(
         self, admin: SuperAdministrateur
     ) -> SuperAdministrateur:
         """Sauvegarde un super administrateur et retourne l'entité mise à jour."""
-        # TODO: Implémenter la conversion entité -> modèle -> entité
-        return admin
+        query = select(SuperAdministrateurModel).where(SuperAdministrateurModel.id == admin.id)
+        result = await self._session.execute(query)
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            model = SuperAdministrateurModel(
+                id=admin.id,
+                email=str(admin.email),
+                telephone=str(admin.telephone) if admin.telephone else None,
+                mot_de_passe_hash=admin.mot_de_passe_hash,
+                nom=admin.nom,
+                prenom=admin.prenom,
+                statut=admin.statut,
+                canal_validation=admin.canal_validation,
+                email_verifie=admin.email_verifie,
+                telephone_verifie=admin.telephone_verifie,
+                code_validation=admin.code_validation,
+                code_validation_expiration=admin.code_validation_expiration,
+                date_creation=admin.date_creation,
+                date_derniere_connexion=admin.date_derniere_connexion,
+                date_modification=admin.date_modification,
+            )
+            self._session.add(model)
+        else:
+            model.email = str(admin.email)
+            model.telephone = str(admin.telephone) if admin.telephone else None
+            model.mot_de_passe_hash = admin.mot_de_passe_hash
+            model.nom = admin.nom
+            model.prenom = admin.prenom
+            model.statut = admin.statut
+            model.canal_validation = admin.canal_validation
+            model.email_verifie = admin.email_verifie
+            model.telephone_verifie = admin.telephone_verifie
+            model.code_validation = admin.code_validation
+            model.code_validation_expiration = admin.code_validation_expiration
+            model.date_creation = admin.date_creation
+            model.date_derniere_connexion = admin.date_derniere_connexion
+            model.date_modification = admin.date_modification
+
+        await self._session.flush()
+        return self._model_vers_entite(model)
 
     async def obtenir_par_id(self, utilisateur_id: UUID) -> Optional[Utilisateur]:
         """Récupère un utilisateur par son ID."""

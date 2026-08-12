@@ -1,6 +1,6 @@
 """Use case pour la validation d'un compte utilisateur."""
 
-from ...domain.entities import Utilisateur
+from ...domain.entities import AdministrateurRH, SuperAdministrateur, Utilisateur
 from ...domain.enums import StatutCompte, TypeEvenement
 from ...domain.exceptions import CodeValidationInvalideError, UtilisateurIntrouvableError
 from ...domain.ports import UtilisateurRepository
@@ -58,9 +58,15 @@ class ValiderCompteUseCase:
             utilisateur_sauvegarde = (
                 await self._utilisateur_repository.sauvegarder_candidat(utilisateur)
             )
-        else:  # Administrateur
-            # Déterminer le type d'admin et sauvegarder approprié
-            # TODO: Implémenter la logique de distinction admin RH/super admin
+        elif isinstance(utilisateur, SuperAdministrateur):
+            utilisateur_sauvegarde = (
+                await self._utilisateur_repository.sauvegarder_super_admin(utilisateur)
+            )
+        elif isinstance(utilisateur, AdministrateurRH):
+            utilisateur_sauvegarde = (
+                await self._utilisateur_repository.sauvegarder_admin_rh(utilisateur)
+            )
+        else:
             utilisateur_sauvegarde = utilisateur
 
         # Envoyer la notification de validation

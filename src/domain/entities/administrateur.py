@@ -33,7 +33,7 @@ class SuperAdministrateur(Administrateur):
         canal_validation: CanalNotification,
     ) -> "SuperAdministrateur":
         """Crée un nouveau super administrateur avec les valeurs par défaut."""
-        return cls(
+        super_admin = cls(
             id=uuid4(),
             email=email,
             telephone=telephone,
@@ -48,6 +48,8 @@ class SuperAdministrateur(Administrateur):
             date_derniere_connexion=None,
             date_modification=None,
         )
+        super_admin.generer_code_validation()
+        return super_admin
 
 
 @dataclass
@@ -65,7 +67,7 @@ class AdministrateurRH(Administrateur):
         canal_validation: CanalNotification,
     ) -> "AdministrateurRH":
         """Crée un nouveau administrateur RH avec les valeurs par défaut."""
-        return cls(
+        admin_rh = cls(
             id=uuid4(),
             email=email,
             telephone=telephone,
@@ -80,3 +82,5 @@ class AdministrateurRH(Administrateur):
             date_derniere_connexion=None,
             date_modification=None,
         )
+        admin_rh.generer_code_validation()
+        return admin_rh
