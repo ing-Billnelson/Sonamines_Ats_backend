@@ -125,6 +125,14 @@ class CandidatureIntrouvableError(DomainException):
         self.message = message
 
 
+class CandidatureDejaExistanteError(DomainException):
+    """Erreur levée quand un candidat postule déjà à une offre donnée."""
+
+    def __init__(self, message: str = "Vous avez déjà postulé à cette offre"):
+        super().__init__(message)
+        self.message = message
+
+
 class CodeValidationInvalideError(DomainException):
     """Erreur levée quand le code de validation est incorrect ou expiré."""
 
