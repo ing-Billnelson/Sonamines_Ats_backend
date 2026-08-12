@@ -1,5 +1,7 @@
 """Dépendances FastAPI pour l'injection de dépendances."""
 
+from uuid import UUID
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from argon2 import PasswordHasher
@@ -7,18 +9,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...application.use_cases import (
     CreerCompteCandidatUseCase,
+    CreerCompteAdministrateurRHUseCase,
     AuthentifierUseCase,
     ModifierCanalNotificationUseCase,
     TeleverserPhotoProfilUseCase,
     SupprimerPhotoProfilUseCase,
     SoumettreCandidatureSpontaneeUseCase,
+    PostulerOffreUseCase,
     TeleverserDocumentUseCase,
     ListerNotificationsUseCase,
     MarquerNotificationLueUseCase,
     NotifierUtilisateurUseCase,
     ValiderCompteUseCase,
+    CreerOffreUseCase,
+    PublierOffreUseCase,
+    CloturerOffreUseCase,
 )
 from ...application.dto import UtilisateurDTO
+from ...domain.entities import AdministrateurRH, SuperAdministrateur
 from ...domain.exceptions import AuthentificationEchoueeError
 from ...domain.ports import NotificationRepository
 from ...infrastructure.config import settings
@@ -132,6 +140,19 @@ def get_creer_compte_candidat_use_case(
     )
 
 
+def get_creer_compte_administrateur_rh_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+    password_hasher: PasswordHasher = Depends(get_password_hasher),
+) -> CreerCompteAdministrateurRHUseCase:
+    """Factory pour le use case de création de compte administrateur RH."""
+    return CreerCompteAdministrateurRHUseCase(
+        utilisateur_repository=utilisateur_repository,
+        notifier_utilisateur=notifier_utilisateur,
+        password_hasher=password_hasher,
+    )
+
+
 def get_authentifier_use_case(
     utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
     password_hasher: PasswordHasher = Depends(get_password_hasher),
@@ -189,6 +210,54 @@ def get_soumettre_candidature_spontanee_use_case(
     )
 
 
+def get_postuler_offre_use_case(
+    candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+) -> PostulerOffreUseCase:
+    """Factory pour le use case de candidature à une offre."""
+    return PostulerOffreUseCase(
+        candidature_repository=candidature_repository,
+        offre_repository=offre_repository,
+        utilisateur_repository=utilisateur_repository,
+        notifier_utilisateur=notifier_utilisateur,
+    )
+
+
+def get_creer_offre_use_case(
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+) -> CreerOffreUseCase:
+    """Factory pour le use case de création d'offre."""
+    return CreerOffreUseCase(
+        offre_repository=offre_repository,
+        utilisateur_repository=utilisateur_repository,
+    )
+
+
+def get_publier_offre_use_case(
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+) -> PublierOffreUseCase:
+    """Factory pour le use case de publication d'offre."""
+    return PublierOffreUseCase(
+        offre_repository=offre_repository,
+        utilisateur_repository=utilisateur_repository,
+    )
+
+
+def get_cloturer_offre_use_case(
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+) -> CloturerOffreUseCase:
+    """Factory pour le use case de clôture d'offre."""
+    return CloturerOffreUseCase(
+        offre_repository=offre_repository,
+        utilisateur_repository=utilisateur_repository,
+    )
+
+
 def get_televerser_document_use_case() -> TeleverserDocumentUseCase:
     """Factory pour le use case de téléversement de document."""
     # TODO: Implémenter l'injection des vraies dépendances
@@ -198,21 +267,21 @@ def get_televerser_document_use_case() -> TeleverserDocumentUseCase:
     )
 
 
-def get_lister_notifications_use_case() -> ListerNotificationsUseCase:
+def get_lister_notifications_use_case(
+    notification_repository: PostgresNotificationRepository = Depends(get_notification_repository),
+) -> ListerNotificationsUseCase:
     """Factory pour le use case de listage de notifications."""
-    # TODO: Implémenter l'injection des vraies dépendances
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Use case non configuré"},
+    return ListerNotificationsUseCase(
+        notification_repository=notification_repository,
     )
 
 
-def get_marquer_notification_lue_use_case() -> MarquerNotificationLueUseCase:
+def get_marquer_notification_lue_use_case(
+    notification_repository: PostgresNotificationRepository = Depends(get_notification_repository),
+) -> MarquerNotificationLueUseCase:
     """Factory pour le use case de marquage de notification."""
-    # TODO: Implémenter l'injection des vraies dépendances
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Use case non configuré"},
+    return MarquerNotificationLueUseCase(
+        notification_repository=notification_repository,
     )
 
 
@@ -233,19 +302,31 @@ async def get_utilisateur_courant(
         )
 
 
-def get_admin_rh_courant(
+async def get_admin_rh_courant(
     utilisateur_courant: UtilisateurDTO = Depends(get_utilisateur_courant),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
 ) -> UtilisateurDTO:
-    """Vérifie que l'utilisateur connecté est un Admin RH."""
-    # TODO: Implémenter la vérification du rôle
-    # Pour l'instant, on accepte tous les utilisateurs connectés
+    """Vérifie que l'utilisateur connecté est un Admin RH (ou Super Admin)."""
+    utilisateur = await utilisateur_repository.obtenir_par_id(UUID(utilisateur_courant.id))
+    if utilisateur is None or not isinstance(
+        utilisateur, (AdministrateurRH, SuperAdministrateur)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error": "AccesRefuse", "message": "Accès réservé aux administrateurs RH"},
+        )
     return utilisateur_courant
 
 
-def get_super_admin_courant(
+async def get_super_admin_courant(
     utilisateur_courant: UtilisateurDTO = Depends(get_utilisateur_courant),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
 ) -> UtilisateurDTO:
     """Vérifie que l'utilisateur connecté est un Super Admin."""
-    # TODO: Implémenter la vérification du rôle
-    # Pour l'instant, on accepte tous les utilisateurs connectés
+    utilisateur = await utilisateur_repository.obtenir_par_id(UUID(utilisateur_courant.id))
+    if utilisateur is None or not isinstance(utilisateur, SuperAdministrateur):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error": "AccesRefuse", "message": "Accès réservé aux super administrateurs"},
+        )
     return utilisateur_courant
