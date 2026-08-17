@@ -4,7 +4,7 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from ....domain.entities import Candidature, Document, HistoriqueStatut
 from ....domain.ports import CandidatureRepository
@@ -110,22 +110,74 @@ class PostgresCandidatureRepository(CandidatureRepository):
         # TODO: Implémenter la récupération et conversion
         return []
 
+    def _model_vers_entite_document(self, model: DocumentModel) -> Document:
+        """Convertit un modèle SQLAlchemy document en entité domaine."""
+        return Document(
+            id=model.id,
+            candidature_id=model.candidature_id,
+            type_document=model.type_document,
+            nom_original=model.nom_original,
+            nom_fichier_stockage=model.nom_fichier_stockage,
+            url_stockage=model.url_stockage,
+            taille_octets=model.taille_octets,
+            type_mime=model.type_mime,
+            date_telechargement=model.date_telechargement,
+            telechargeur_id=model.telechargeur_id,
+        )
+
     async def sauvegarder_document(self, document: Document) -> Document:
         """Sauvegarde un document et retourne l'entité mise à jour."""
-        # TODO: Implémenter la conversion entité -> modèle -> entité
-        return document
+        query = select(DocumentModel).where(DocumentModel.id == document.id)
+        result = await self._session.execute(query)
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            model = DocumentModel(
+                id=document.id,
+                candidature_id=document.candidature_id,
+                telechargeur_id=document.telechargeur_id,
+                type_document=document.type_document,
+                nom_original=document.nom_original,
+                nom_fichier_stockage=document.nom_fichier_stockage,
+                url_stockage=document.url_stockage,
+                taille_octets=document.taille_octets,
+                type_mime=document.type_mime,
+                date_telechargement=document.date_telechargement,
+            )
+            self._session.add(model)
+        else:
+            model.candidature_id = document.candidature_id
+            model.telechargeur_id = document.telechargeur_id
+            model.type_document = document.type_document
+            model.nom_original = document.nom_original
+            model.nom_fichier_stockage = document.nom_fichier_stockage
+            model.url_stockage = document.url_stockage
+            model.taille_octets = document.taille_octets
+            model.type_mime = document.type_mime
+            model.date_telechargement = document.date_telechargement
+
+        await self._session.flush()
+        return self._model_vers_entite_document(model)
 
     async def obtenir_documents_candidature(
         self, candidature_id: UUID
     ) -> list[Document]:
         """Récupère tous les documents d'une candidature."""
-        # TODO: Implémenter la récupération et conversion
-        return []
+        query = (
+            select(DocumentModel)
+            .where(DocumentModel.candidature_id == candidature_id)
+            .order_by(DocumentModel.date_telechargement)
+        )
+        result = await self._session.execute(query)
+        models = result.scalars().all()
+        return [self._model_vers_entite_document(model) for model in models]
 
     async def supprimer_document(self, document_id: UUID) -> bool:
         """Supprime un document du système."""
-        # TODO: Implémenter la suppression
-        return False
+        query = delete(DocumentModel).where(DocumentModel.id == document_id)
+        result = await self._session.execute(query)
+        await self._session.flush()
+        return result.rowcount > 0
 
     async def sauvegarder_historique_statut(
         self, historique: HistoriqueStatut

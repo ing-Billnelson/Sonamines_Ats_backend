@@ -189,12 +189,25 @@ def get_modifier_canal_notification_use_case() -> ModifierCanalNotificationUseCa
     )
 
 
-def get_televerser_photo_profil_use_case() -> TeleverserPhotoProfilUseCase:
+def get_televerser_photo_profil_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    storage_port: MinioAdapter = Depends(get_storage_adapter),
+) -> TeleverserPhotoProfilUseCase:
     """Factory pour le use case de téléversement de photo."""
-    # TODO: Implémenter l'injection des vraies dépendances
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Use case non configuré"},
+    return TeleverserPhotoProfilUseCase(
+        utilisateur_repository=utilisateur_repository,
+        storage_port=storage_port,
+    )
+
+
+def get_supprimer_photo_profil_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    storage_port: MinioAdapter = Depends(get_storage_adapter),
+) -> SupprimerPhotoProfilUseCase:
+    """Factory pour le use case de suppression de photo."""
+    return SupprimerPhotoProfilUseCase(
+        utilisateur_repository=utilisateur_repository,
+        storage_port=storage_port,
     )
 
 
@@ -229,51 +242,61 @@ def get_postuler_offre_use_case(
 def get_creer_offre_use_case(
     offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
     utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    search_port: ElasticsearchAdapter = Depends(get_search_adapter),
 ) -> CreerOffreUseCase:
     """Factory pour le use case de création d'offre."""
     return CreerOffreUseCase(
         offre_repository=offre_repository,
         utilisateur_repository=utilisateur_repository,
+        search_port=search_port,
     )
 
 
 def get_publier_offre_use_case(
     offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
     utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    search_port: ElasticsearchAdapter = Depends(get_search_adapter),
 ) -> PublierOffreUseCase:
     """Factory pour le use case de publication d'offre."""
     return PublierOffreUseCase(
         offre_repository=offre_repository,
         utilisateur_repository=utilisateur_repository,
+        search_port=search_port,
     )
 
 
 def get_cloturer_offre_use_case(
     offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
     utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    search_port: ElasticsearchAdapter = Depends(get_search_adapter),
 ) -> CloturerOffreUseCase:
     """Factory pour le use case de clôture d'offre."""
     return CloturerOffreUseCase(
         offre_repository=offre_repository,
         utilisateur_repository=utilisateur_repository,
+        search_port=search_port,
     )
 
 
 def get_rechercher_offres_use_case(
+    search_port: ElasticsearchAdapter = Depends(get_search_adapter),
     offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
 ) -> RechercherOffresUseCase:
     """Factory pour le use case de recherche d'offres."""
     return RechercherOffresUseCase(
+        search_port=search_port,
         offre_repository=offre_repository,
     )
 
 
-def get_televerser_document_use_case() -> TeleverserDocumentUseCase:
+def get_televerser_document_use_case(
+    candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
+    storage_port: MinioAdapter = Depends(get_storage_adapter),
+) -> TeleverserDocumentUseCase:
     """Factory pour le use case de téléversement de document."""
-    # TODO: Implémenter l'injection des vraies dépendances
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Use case non configuré"},
+    return TeleverserDocumentUseCase(
+        candidature_repository=candidature_repository,
+        storage_port=storage_port,
     )
 
 

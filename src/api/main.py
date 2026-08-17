@@ -21,9 +21,13 @@ from ..domain.exceptions import (
     CanalNonVerifieError,
     CandidatureNonEligibleError,
     OffreClotureeError,
+    RechercheIndisponibleError,
+    StockageIndisponibleError,
 )
 from ..infrastructure.config import settings
 from ..infrastructure.db.session import engine
+from ..infrastructure.search import ElasticsearchAdapter
+from ..infrastructure.storage import MinioAdapter
 from .v1.routers import (
     admin_router,
     auth_router,
@@ -59,12 +63,24 @@ async def lifespan(app: FastAPI):
                pool_size=engine.pool.size(), 
                max_overflow=engine.pool._max_overflow)
     
-    # TODO: Initialiser les autres services externes
-    # - Elasticsearch
-    # - MinIO
-    # - Vérifier les buckets MinIO
-    # - Créer les index Elasticsearch si nécessaire
-    
+    # Initialisation Elasticsearch : vérification/création des index avec mapping
+    try:
+        search_adapter = ElasticsearchAdapter(settings)
+        await search_adapter.verifier_ou_creer_indexes()
+        logger.info("✅ Index Elasticsearch vérifiés/créés", index_offres="offres", index_candidatures="candidatures")
+    except Exception as e:
+        # L'API démarre quand même ; la recherche renverra 503 tant qu'ES est hors ligne
+        logger.warning("⚠️ Elasticsearch indisponible au démarrage, recherche 503 jusqu'à reconnexion", error=str(e))
+
+    # Initialisation MinIO : vérification/création du bucket de stockage
+    try:
+        minio_adapter = MinioAdapter(settings)
+        await minio_adapter.verifier_ou_creer_bucket()
+        logger.info("✅ Bucket MinIO vérifié/créé", bucket=settings.minio_bucket)
+    except Exception as e:
+        # L'API démarre quand même ; le bucket sera recréé en filet de sécurité au premier upload
+        logger.warning("⚠️ MinIO indisponible au démarrage, bucket recréé au premier upload", error=str(e))
+
     yield
     
     # Shutdown
@@ -144,6 +160,8 @@ async def domain_exception_handler(request: Request, exc: DomainException):
         StatutCandidatureInvalideError: status.HTTP_400_BAD_REQUEST,
         FichierTropVolumineuxError: status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
         FormatFichierNonSupporteError: status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+        RechercheIndisponibleError: status.HTTP_503_SERVICE_UNAVAILABLE,
+        StockageIndisponibleError: status.HTTP_503_SERVICE_UNAVAILABLE,
     }
     
     status_code = status_code_mapping.get(type(exc), status.HTTP_400_BAD_REQUEST)

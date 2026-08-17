@@ -3,7 +3,7 @@
 from uuid import UUID
 
 from ...domain.exceptions import OffreIntrouvableError
-from ...domain.ports import OffreRepository, UtilisateurRepository
+from ...domain.ports import OffreRepository, SearchPort, UtilisateurRepository
 from ..dto import OffreDTO
 
 
@@ -14,9 +14,11 @@ class PublierOffreUseCase:
         self,
         offre_repository: OffreRepository,
         utilisateur_repository: UtilisateurRepository,
+        search_port: SearchPort,
     ):
         self._offre_repository = offre_repository
         self._utilisateur_repository = utilisateur_repository
+        self._search_port = search_port
 
     async def executer(self, offre_id: str) -> OffreDTO:
         """Publie une offre et retourne ses informations complètes."""
@@ -29,6 +31,9 @@ class PublierOffreUseCase:
         offre.publier()
 
         offre_sauvegarde = await self._offre_repository.sauvegarder(offre)
+
+        # Mettre à jour l'index (statut OUVERTE + date_publication) — best-effort
+        await self._search_port.indexer_offre(offre_sauvegarde)
 
         createur = await self._utilisateur_repository.obtenir_par_id(
             offre_sauvegarde.createur_id

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from ...domain.entities import Offre
-from ...domain.ports import OffreRepository, UtilisateurRepository
+from ...domain.ports import OffreRepository, SearchPort, UtilisateurRepository
 from ..dto import CreerOffreDTO, OffreDTO
 
 
@@ -15,9 +15,11 @@ class CreerOffreUseCase:
         self,
         offre_repository: OffreRepository,
         utilisateur_repository: UtilisateurRepository,
+        search_port: SearchPort,
     ):
         self._offre_repository = offre_repository
         self._utilisateur_repository = utilisateur_repository
+        self._search_port = search_port
 
     async def executer(self, donnees: CreerOffreDTO, createur_id: str) -> OffreDTO:
         """Crée une offre et retourne ses informations complètes."""
@@ -51,6 +53,9 @@ class CreerOffreUseCase:
         )
 
         offre_sauvegarde = await self._offre_repository.sauvegarder(offre)
+
+        # Indexer l'offre dans le moteur de recherche (best-effort)
+        await self._search_port.indexer_offre(offre_sauvegarde)
 
         # Récupérer le créateur pour le nom complet
         createur = await self._utilisateur_repository.obtenir_par_id(createur_uuid)
