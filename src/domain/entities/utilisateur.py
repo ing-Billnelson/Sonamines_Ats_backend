@@ -30,6 +30,8 @@ class Utilisateur(ABC):
     date_modification: Optional[datetime] = None
     code_validation: Optional[str] = None
     code_validation_expiration: Optional[datetime] = None
+    code_reinitialisation: Optional[str] = None
+    code_reinitialisation_expiration: Optional[datetime] = None
 
     @classmethod
     def creer_nouveau(
@@ -72,6 +74,27 @@ class Utilisateur(ABC):
         if datetime.utcnow() > self.code_validation_expiration:
             return False
         return True
+
+    def generer_code_reinitialisation(self) -> None:
+        """Génère un code de réinitialisation numérique à 6 chiffres (valable 5 minutes)."""
+        self.code_reinitialisation = f"{secrets.randbelow(1000000):06d}"
+        self.code_reinitialisation_expiration = datetime.utcnow() + timedelta(minutes=5)
+
+    def code_reinitialisation_est_valide(self, code: str) -> bool:
+        """Vérifie si le code de réinitialisation fourni correspond et n'est pas expiré."""
+        if not self.code_reinitialisation or not self.code_reinitialisation_expiration:
+            return False
+        if self.code_reinitialisation != code:
+            return False
+        if datetime.utcnow() > self.code_reinitialisation_expiration:
+            return False
+        return True
+
+    def reinitialiser_mot_de_passe(self, nouveau_hash: str) -> None:
+        """Réinitialise le mot de passe et invalide le code de réinitialisation."""
+        self.mot_de_passe_hash = nouveau_hash
+        self.code_reinitialisation = None
+        self.code_reinitialisation_expiration = None
 
     def valider_compte(self) -> None:
         """Valide le compte utilisateur."""

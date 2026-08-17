@@ -36,6 +36,10 @@ class UtilisateurModel(Base):
     code_validation = Column(String, nullable=True)
     code_validation_expiration = Column(DateTime, nullable=True)
     
+    # Code de réinitialisation du mot de passe
+    code_reinitialisation = Column(String, nullable=True)
+    code_reinitialisation_expiration = Column(DateTime, nullable=True)
+    
     # Dates
     date_creation = Column(DateTime, nullable=False, default=datetime.utcnow)
     date_derniere_connexion = Column(DateTime, nullable=True)
