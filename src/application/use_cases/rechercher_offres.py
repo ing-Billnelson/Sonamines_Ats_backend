@@ -51,6 +51,7 @@ class RechercherOffresUseCase:
         """Construit le dictionnaire de critères à destination du port de recherche."""
         criteres: Dict[str, Any] = {
             "texte": donnees.texte,
+            "statut": StatutOffre.OUVERTE.value,
             "type_offre": donnees.type_offre.value if donnees.type_offre else None,
             "type_contrat": donnees.type_contrat.value if donnees.type_contrat else None,
             "type_stage": donnees.type_stage.value if donnees.type_stage else None,
