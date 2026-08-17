@@ -172,3 +172,19 @@ class AutorisationRefuseeError(DomainException):
     def __init__(self, message: str = "Opération non autorisée"):
         super().__init__(message)
         self.message = message
+
+
+class RechercheIndisponibleError(DomainException):
+    """Erreur levée quand le moteur de recherche (Elasticsearch) est indisponible."""
+
+    def __init__(self, message: str = "Le service de recherche est momentanément indisponible"):
+        super().__init__(message)
+        self.message = message
+
+
+class StockageIndisponibleError(DomainException):
+    """Erreur levée quand le service de stockage (MinIO) est indisponible."""
+
+    def __init__(self, message: str = "Le service de stockage est momentanément indisponible"):
+        super().__init__(message)
+        self.message = message

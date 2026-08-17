@@ -4,7 +4,10 @@ from uuid import UUID
 
 from ...domain.entities import Document
 from ...domain.enums import CategorieFichier
-from ...domain.exceptions import CandidatureIntrouvableError
+from ...domain.exceptions import (
+    CandidatureIntrouvableError,
+    AutorisationRefuseeError,
+)
 from ...domain.ports import CandidatureRepository, StoragePort
 from ..dto import DocumentDTO, TeleverserDocumentDTO
 
@@ -42,6 +45,12 @@ class TeleverserDocumentUseCase:
         candidature = await self._candidature_repository.obtenir_par_id(candidature_id)
         if not candidature:
             raise CandidatureIntrouvableError(donnees.candidature_id)
+
+        # Vérifier que le téléchargeur est propriétaire de la candidature
+        if candidature.candidat_id != telechargeur_id:
+            raise AutorisationRefuseeError(
+                "Vous n'êtes pas autorisé à ajouter un document à cette candidature"
+            )
 
         # Téléverser le fichier
         # Le StoragePort se charge de valider la taille et le format

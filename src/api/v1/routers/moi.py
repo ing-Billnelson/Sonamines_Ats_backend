@@ -24,6 +24,7 @@ from ..dependencies import (
     get_utilisateur_courant,
     get_modifier_canal_notification_use_case,
     get_televerser_photo_profil_use_case,
+    get_supprimer_photo_profil_use_case,
 )
 
 router = APIRouter(prefix="/moi", tags=["Profil utilisateur"])
@@ -139,7 +140,7 @@ async def televerser_photo_profil(
 )
 async def supprimer_photo_profil(
     utilisateur_courant = Depends(get_utilisateur_courant),
-    use_case: SupprimerPhotoProfilUseCase = Depends(get_televerser_photo_profil_use_case),  # TODO: correct dependency
+    use_case: SupprimerPhotoProfilUseCase = Depends(get_supprimer_photo_profil_use_case),
 ):
     """Supprime la photo de profil."""
     try:

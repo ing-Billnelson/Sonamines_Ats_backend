@@ -1,36 +1,49 @@
 """Router pour les opérations des candidats."""
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
-from typing import List
+from typing import List, Optional
+from uuid import UUID
 
 from ....application.use_cases import (
     SoumettreCandidatureSpontaneeUseCase,
     PostulerOffreUseCase,
     TeleverserDocumentUseCase,
+    TeleverserPhotoProfilUseCase,
+    SupprimerPhotoProfilUseCase,
 )
 from ....application.dto import (
     SoumettreKandidatureDTO,
     TeleverserDocumentDTO,
+    UtilisateurDTO,
 )
 from ....domain.entities.document import TypeDocument
+from ....domain.enums import CategorieFichier
 from ....domain.exceptions import (
     UtilisateurIntrouvableError,
     OffreClotureeError,
     OffreIntrouvableError,
     CandidatureDejaExistanteError,
     CandidatureNonEligibleError,
+    StockageIndisponibleError,
 )
+from ....domain.ports import CandidatureRepository, StoragePort
 from ..schemas import (
     SoumettreKandidatureRequest,
     CandidatureResponse,
     TeleverserDocumentRequest,
     DocumentResponse,
+    UtilisateurResponse,
+    SuccessResponse,
 )
 from ..dependencies import (
     get_utilisateur_courant,
     get_soumettre_candidature_spontanee_use_case,
     get_postuler_offre_use_case,
     get_televerser_document_use_case,
+    get_televerser_photo_profil_use_case,
+    get_supprimer_photo_profil_use_case,
+    get_candidature_repository,
+    get_storage_adapter,
 )
 
 router = APIRouter(prefix="/candidats", tags=["Candidats"])
@@ -225,3 +238,173 @@ async def televerser_document(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"error": "ValidationError", "message": str(e)},
         )
+
+
+@router.post(
+    "/photo-profil",
+    response_model=UtilisateurResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Téléverser une photo de profil",
+    description="Téléverse la photo de profil du candidat connecté",
+)
+async def televerser_photo_profil_candidat(
+    photo: UploadFile = File(..., description="Fichier image (JPG, JPEG, PNG)"),
+    utilisateur_courant: UtilisateurDTO = Depends(get_utilisateur_courant),
+    use_case: TeleverserPhotoProfilUseCase = Depends(get_televerser_photo_profil_use_case),
+):
+    """Téléverse la photo de profil du candidat connecté."""
+    contenu_fichier = await photo.read()
+
+    utilisateur_dto = await use_case.executer(
+        candidat_id=utilisateur_courant.id,
+        fichier=contenu_fichier,
+        nom_original=photo.filename or "photo_profil",
+    )
+
+    return _convertir_utilisateur_dto(utilisateur_dto)
+
+
+@router.delete(
+    "/photo-profil",
+    response_model=UtilisateurResponse,
+    summary="Supprimer la photo de profil",
+    description="Supprime la photo de profil du candidat connecté",
+)
+async def supprimer_photo_profil_candidat(
+    utilisateur_courant: UtilisateurDTO = Depends(get_utilisateur_courant),
+    use_case: SupprimerPhotoProfilUseCase = Depends(get_supprimer_photo_profil_use_case),
+):
+    """Supprime la photo de profil du candidat connecté."""
+    utilisateur_dto = await use_case.executer(candidat_id=utilisateur_courant.id)
+
+    return _convertir_utilisateur_dto(utilisateur_dto)
+
+
+@router.get(
+    "/candidatures/{candidature_id}/documents",
+    response_model=List[DocumentResponse],
+    summary="Lister les documents d'une candidature",
+    description="Liste les documents d'une candidature avec des URLs présignées",
+)
+async def lister_documents_candidature(
+    candidature_id: str,
+    utilisateur_courant: UtilisateurDTO = Depends(get_utilisateur_courant),
+    candidature_repository: CandidatureRepository = Depends(get_candidature_repository),
+    storage_port: StoragePort = Depends(get_storage_adapter),
+):
+    """Liste les documents d'une candidature avec des URLs présignées."""
+    candidature = await candidature_repository.obtenir_par_id(UUID(candidature_id))
+    if not candidature:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "CandidatureIntrouvable", "message": f"Candidature introuvable: {candidature_id}"},
+        )
+
+    if candidature.candidat_id != UUID(utilisateur_courant.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error": "AutorisationRefusee", "message": "Vous n'êtes pas autorisé à consulter cette candidature"},
+        )
+
+    documents = await candidature_repository.obtenir_documents_candidature(
+        UUID(candidature_id)
+    )
+
+    reponses = []
+    for document in documents:
+        url_temporaire = await storage_port.generer_url_temporaire(
+            document.url_stockage
+        )
+        reponses.append(
+            DocumentResponse(
+                id=str(document.id),
+                type_document=document.type_document,
+                nom_original=document.nom_original,
+                taille_octets=document.taille_octets,
+                type_mime=document.type_mime,
+                url_temporaire=url_temporaire,
+                date_telechargement=document.date_telechargement.isoformat(),
+                telechargeur_nom_complet="",
+            )
+        )
+
+    return reponses
+
+
+@router.delete(
+    "/candidatures/{candidature_id}/documents/{document_id}",
+    response_model=SuccessResponse,
+    summary="Supprimer un document d'une candidature",
+    description="Supprime un document d'une candidature (stockage + référence)",
+)
+async def supprimer_document_candidature(
+    candidature_id: str,
+    document_id: str,
+    utilisateur_courant: UtilisateurDTO = Depends(get_utilisateur_courant),
+    candidature_repository: CandidatureRepository = Depends(get_candidature_repository),
+    storage_port: StoragePort = Depends(get_storage_adapter),
+):
+    """Supprime un document d'une candidature."""
+    candidature = await candidature_repository.obtenir_par_id(UUID(candidature_id))
+    if not candidature:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "CandidatureIntrouvable", "message": f"Candidature introuvable: {candidature_id}"},
+        )
+
+    if candidature.candidat_id != UUID(utilisateur_courant.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error": "AutorisationRefusee", "message": "Vous n'êtes pas autorisé à modifier cette candidature"},
+        )
+
+    documents = await candidature_repository.obtenir_documents_candidature(
+        UUID(candidature_id)
+    )
+    document_cible = next(
+        (doc for doc in documents if doc.id == UUID(document_id)), None
+    )
+    if not document_cible:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "DocumentIntrouvable", "message": f"Document introuvable: {document_id}"},
+        )
+
+    try:
+        supprime = await storage_port.supprimer(
+            document_cible.url_stockage, CategorieFichier.DOCUMENT
+        )
+    except Exception as e:
+        raise StockageIndisponibleError(
+            f"Le service de stockage est momentanément indisponible: {e}"
+        )
+    if not supprime:
+        raise StockageIndisponibleError(
+            "Impossible de supprimer le fichier du stockage"
+        )
+
+    await candidature_repository.supprimer_document(UUID(document_id))
+
+    return SuccessResponse(
+        success=True,
+        message="Document supprimé avec succès",
+    )
+
+
+def _convertir_utilisateur_dto(dto: UtilisateurDTO) -> UtilisateurResponse:
+    """Convertit un UtilisateurDTO en UtilisateurResponse."""
+    return UtilisateurResponse(
+        id=dto.id,
+        email=dto.email,
+        telephone=dto.telephone,
+        nom=dto.nom,
+        prenom=dto.prenom,
+        nom_complet=dto.nom_complet,
+        statut=dto.statut,
+        canal_validation=dto.canal_validation,
+        email_verifie=dto.email_verifie,
+        telephone_verifie=dto.telephone_verifie,
+        date_creation=dto.date_creation,
+        date_derniere_connexion=dto.date_derniere_connexion,
+        photo_url=dto.photo_url,
+    )

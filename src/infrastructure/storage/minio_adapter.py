@@ -30,6 +30,20 @@ class MinioAdapter(StoragePort):
         )
         self._bucket_name = settings.minio_bucket
 
+    async def verifier_ou_creer_bucket(self) -> None:
+        """
+        Vérifie que le bucket existe, et le crée sinon.
+
+        Idempotent : peut être appelé au démarrage de l'application et en
+        filet de sécurité avant le premier téléversement. N'est pas bloquant
+        si MinIO est indisponible (le bucket sera recréé plus tard).
+        """
+        try:
+            if not self._client.bucket_exists(self._bucket_name):
+                self._client.make_bucket(self._bucket_name)
+        except S3Error:
+            return
+
     async def televerser(
         self,
         fichier: bytes,
@@ -74,6 +88,9 @@ class MinioAdapter(StoragePort):
         )
 
         try:
+            # Filet de sécurité : s'assurer que le bucket existe
+            await self.verifier_ou_creer_bucket()
+
             # Déterminer le type MIME
             type_mime, _ = mimetypes.guess_type(nom_original)
             if not type_mime:
