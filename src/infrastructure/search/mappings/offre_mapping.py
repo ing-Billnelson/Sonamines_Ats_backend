@@ -11,7 +11,7 @@ OFFRE_MAPPING = {
         },
         "titre": {
             "type": "text",
-            "analyzer": "standard",
+            "analyzer": "french",
             "fields": {
                 "keyword": {
                     "type": "keyword"
@@ -20,7 +20,7 @@ OFFRE_MAPPING = {
         },
         "description": {
             "type": "text",
-            "analyzer": "standard"
+            "analyzer": "french"
         },
         "type_offre": {
             "type": "keyword"
@@ -36,7 +36,7 @@ OFFRE_MAPPING = {
         },
         "lieu": {
             "type": "text",
-            "analyzer": "standard",
+            "analyzer": "french",
             "fields": {
                 "keyword": {
                     "type": "keyword"
@@ -54,7 +54,7 @@ OFFRE_MAPPING = {
         },
         "experience_requise": {
             "type": "text",
-            "analyzer": "standard"
+            "analyzer": "french"
         },
         "date_creation": {
             "type": "date",
@@ -65,6 +65,10 @@ OFFRE_MAPPING = {
             "format": "strict_date_optional_time||epoch_millis"
         },
         "date_limite_candidature": {
+            "type": "date",
+            "format": "strict_date_optional_time||epoch_millis"
+        },
+        "date_cloture": {
             "type": "date",
             "format": "strict_date_optional_time||epoch_millis"
         },

@@ -7,8 +7,11 @@ from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import ApiError, TransportError
 
 from ...domain.entities import Candidature, Offre
+from ...domain.exceptions import RechercheIndisponibleError
 from ...domain.ports import SearchPort
 from ..config import Settings
+from .mappings.candidature_mapping import CANDIDATURE_MAPPING
+from .mappings.offre_mapping import OFFRE_MAPPING
 
 
 class ElasticsearchAdapter(SearchPort):
@@ -79,20 +82,25 @@ class ElasticsearchAdapter(SearchPort):
         """Recherche des offres selon les critères."""
         try:
             query = self._construire_requete_offres(criteres)
-            
+
+            body: Dict[str, Any] = {
+                "query": query,
+                "size": limit,
+                "from": offset,
+            }
+            if criteres.get("tri") == "date_creation":
+                body["sort"] = [{"date_creation": {"order": "desc"}}]
+            else:
+                body["sort"] = [{"_score": {"order": "desc"}}]
+
             response = await self._client.search(
                 index=self._index_offres,
-                body={
-                    "query": query,
-                    "size": limit,
-                    "from": offset,
-                    "sort": [{"date_creation": {"order": "desc"}}],
-                }
+                body=body,
             )
-            
+
             return self._traiter_reponse_recherche(response)
-        except (ApiError, TransportError):
-            return []
+        except (ApiError, TransportError) as e:
+            raise RechercheIndisponibleError(str(e)) from e
 
     async def rechercher_candidatures(
         self,
@@ -103,7 +111,7 @@ class ElasticsearchAdapter(SearchPort):
         """Recherche des candidatures selon les critères."""
         try:
             query = self._construire_requete_candidatures(criteres)
-            
+
             response = await self._client.search(
                 index=self._index_candidatures,
                 body={
@@ -113,10 +121,10 @@ class ElasticsearchAdapter(SearchPort):
                     "sort": [{"date_soumission": {"order": "desc"}}],
                 }
             )
-            
+
             return self._traiter_reponse_recherche(response)
-        except (ApiError, TransportError):
-            return []
+        except (ApiError, TransportError) as e:
+            raise RechercheIndisponibleError(str(e)) from e
 
     async def reinitialiser_index_offres(self) -> bool:
         """Recrée l'index des offres."""
@@ -168,6 +176,7 @@ class ElasticsearchAdapter(SearchPort):
             "experience_requise": offre.experience_requise,
             "date_creation": offre.date_creation.isoformat(),
             "date_publication": offre.date_publication.isoformat() if offre.date_publication else None,
+            "date_cloture": offre.date_cloture.isoformat() if offre.date_cloture else None,
             "date_limite_candidature": offre.date_limite_candidature.isoformat() if offre.date_limite_candidature else None,
         }
 
@@ -187,18 +196,98 @@ class ElasticsearchAdapter(SearchPort):
         }
 
     def _construire_requete_offres(self, criteres: Dict[str, Any]) -> Dict[str, Any]:
-        """Construit une requête Elasticsearch pour les offres."""
-        # TODO: Implémenter la construction de requête complète
-        # Requête simple pour le scaffold
+        """Construit une requête bool Elasticsearch pour les offres."""
+        must: List[Dict[str, Any]] = []
+        filters: List[Dict[str, Any]] = []
+
+        # Recherche textuelle libre : multi_match avec boost sur le titre,
+        # analyseur français (défini dans le mapping).
         if criteres.get("texte"):
-            return {
+            must.append({
                 "multi_match": {
                     "query": criteres["texte"],
-                    "fields": ["titre^2", "description", "lieu", "competences_requises"]
+                    "fields": ["titre^2", "description"],
+                    "analyzer": "french",
                 }
-            }
-        else:
+            })
+
+        # Filtres d'égalité sur champs keyword
+        if criteres.get("type_offre"):
+            filters.append({"term": {"type_offre": criteres["type_offre"]}})
+        if criteres.get("type_contrat"):
+            filters.append({"term": {"type_contrat": criteres["type_contrat"]}})
+        if criteres.get("type_stage"):
+            filters.append({"term": {"type_stage": criteres["type_stage"]}})
+        if criteres.get("statut"):
+            filters.append({"term": {"statut": criteres["statut"]}})
+
+        # Lieu : match insensible à la casse (champ text du mapping)
+        if criteres.get("lieu"):
+            filters.append({"match": {"lieu": criteres["lieu"]}})
+
+        # Compétences : matching sur la liste (per_field: chaque compétence
+        # est un keyword ; on matche au moins l'une d'elles)
+        if criteres.get("competences"):
+            filters.append({"terms": {"competences_requises": criteres["competences"]}})
+
+        # Salaire : range query (chevauchant la fourchette)
+        salaire_range: Dict[str, Any] = {}
+        if criteres.get("salaire_min") is not None:
+            salaire_range["gte"] = criteres["salaire_min"]
+        if criteres.get("salaire_max") is not None:
+            salaire_range["lte"] = criteres["salaire_max"]
+        if salaire_range:
+            filters.append({
+                "bool": {
+                    "should": [
+                        {"range": {"salaire_min": {"lte": salaire_range.get("lte", 10**12)}}},
+                        {"range": {"salaire_max": {"gte": salaire_range.get("gte", 0)}}},
+                    ],
+                    "minimum_should_match": 1,
+                }
+            })
+
+        # Expérience requise : text — match partiel
+        if criteres.get("experience_requise"):
+            filters.append({"match": {"experience_requise": criteres["experience_requise"]}})
+
+        # Dates : range query
+        if criteres.get("date_limite_candidature"):
+            filters.append({
+                "range": {"date_limite_candidature": {"gte": criteres["date_limite_candidature"]}}
+            })
+        if criteres.get("date_publication"):
+            filters.append({
+                "range": {"date_publication": {"lte": criteres["date_publication"]}}
+            })
+
+        # Bool final : must (pertinence) + filter (filtres non scorés)
+        body: Dict[str, Any] = {}
+        if must:
+            body["must"] = must
+        if filters:
+            body["filter"] = filters
+
+        if not body:
             return {"match_all": {}}
+
+        return {"bool": body}
+
+    async def verifier_ou_creer_indexes(self) -> None:
+        """Vérifie et crée les index Elasticsearch s'ils n'existent pas."""
+        try:
+            if not await self._client.indices.exists(index=self._index_offres):
+                await self._client.indices.create(
+                    index=self._index_offres,
+                    body={"mappings": OFFRE_MAPPING},
+                )
+            if not await self._client.indices.exists(index=self._index_candidatures):
+                await self._client.indices.create(
+                    index=self._index_candidatures,
+                    body={"mappings": CANDIDATURE_MAPPING},
+                )
+        except (ApiError, TransportError) as e:
+            raise RechercheIndisponibleError(str(e)) from e
 
     def _construire_requete_candidatures(self, criteres: Dict[str, Any]) -> Dict[str, Any]:
         """Construit une requête Elasticsearch pour les candidatures."""
@@ -225,27 +314,8 @@ class ElasticsearchAdapter(SearchPort):
 
     def _obtenir_mapping_offres(self) -> Dict[str, Any]:
         """Retourne le mapping Elasticsearch pour les offres."""
-        # TODO: Définir un mapping complet
-        return {
-            "properties": {
-                "titre": {"type": "text", "analyzer": "standard"},
-                "description": {"type": "text", "analyzer": "standard"},
-                "lieu": {"type": "keyword"},
-                "competences_requises": {"type": "keyword"},
-                "date_creation": {"type": "date"},
-                "date_publication": {"type": "date"},
-            }
-        }
+        return OFFRE_MAPPING
 
     def _obtenir_mapping_candidatures(self) -> Dict[str, Any]:
         """Retourne le mapping Elasticsearch pour les candidatures."""
-        # TODO: Définir un mapping complet
-        return {
-            "properties": {
-                "numero_reference": {"type": "keyword"},
-                "message_motivation": {"type": "text", "analyzer": "standard"},
-                "notes_internes": {"type": "text", "analyzer": "standard"},
-                "date_soumission": {"type": "date"},
-                "statut": {"type": "keyword"},
-            }
-        }
+        return CANDIDATURE_MAPPING
