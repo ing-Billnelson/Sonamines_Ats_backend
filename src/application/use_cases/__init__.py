@@ -6,6 +6,7 @@ from .cloturer_offre import CloturerOffreUseCase
 from .creer_compte_administrateur_rh import CreerCompteAdministrateurRHUseCase
 from .creer_compte_candidat import CreerCompteCandidatUseCase
 from .creer_offre import CreerOffreUseCase
+from .demander_reinitialisation_mot_de_passe import DemanderReinitialisationMotDePasseUseCase
 from .lister_notifications import ListerNotificationsUseCase
 from .marquer_notification_lue import MarquerNotificationLueUseCase
 from .modifier_canal_notification import ModifierCanalNotificationUseCase
@@ -15,6 +16,7 @@ from .preselectionner_candidat import PreselectionnerCandidatUseCase
 from .publier_offre import PublierOffreUseCase
 from .rechercher_candidatures import RechercherCandidaturesUseCase
 from .rechercher_offres import RechercherOffresUseCase
+from .reinitialiser_mot_de_passe import ReinitialiserMotDePasseUseCase
 from .soumettre_candidature_spontanee import SoumettreCandidatureSpontaneeUseCase
 from .supprimer_photo_profil import SupprimerPhotoProfilUseCase
 from .televerser_document import TeleverserDocumentUseCase
@@ -27,6 +29,8 @@ __all__ = [
     "CreerCompteCandidatUseCase",
     "CreerCompteAdministrateurRHUseCase",
     "ValiderCompteUseCase",
+    "DemanderReinitialisationMotDePasseUseCase",
+    "ReinitialiserMotDePasseUseCase",
     "ModifierCanalNotificationUseCase",
     # Gestion des fichiers
     "TeleverserPhotoProfilUseCase",

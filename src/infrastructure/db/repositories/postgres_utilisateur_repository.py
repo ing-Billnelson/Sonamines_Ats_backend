@@ -39,6 +39,8 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
             "telephone_verifie": model.telephone_verifie,
             "code_validation": model.code_validation,
             "code_validation_expiration": model.code_validation_expiration,
+            "code_reinitialisation": model.code_reinitialisation,
+            "code_reinitialisation_expiration": model.code_reinitialisation_expiration,
             "date_creation": model.date_creation,
             "date_derniere_connexion": model.date_derniere_connexion,
             "date_modification": model.date_modification,
@@ -73,6 +75,8 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
                 telephone_verifie=candidat.telephone_verifie,
                 code_validation=candidat.code_validation,
                 code_validation_expiration=candidat.code_validation_expiration,
+                code_reinitialisation=candidat.code_reinitialisation,
+                code_reinitialisation_expiration=candidat.code_reinitialisation_expiration,
                 date_creation=candidat.date_creation,
                 date_derniere_connexion=candidat.date_derniere_connexion,
                 date_modification=candidat.date_modification,
@@ -91,6 +95,8 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
             model.telephone_verifie = candidat.telephone_verifie
             model.code_validation = candidat.code_validation
             model.code_validation_expiration = candidat.code_validation_expiration
+            model.code_reinitialisation = candidat.code_reinitialisation
+            model.code_reinitialisation_expiration = candidat.code_reinitialisation_expiration
             model.date_creation = candidat.date_creation
             model.date_derniere_connexion = candidat.date_derniere_connexion
             model.date_modification = candidat.date_modification
@@ -119,6 +125,8 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
                 telephone_verifie=admin.telephone_verifie,
                 code_validation=admin.code_validation,
                 code_validation_expiration=admin.code_validation_expiration,
+                code_reinitialisation=admin.code_reinitialisation,
+                code_reinitialisation_expiration=admin.code_reinitialisation_expiration,
                 date_creation=admin.date_creation,
                 date_derniere_connexion=admin.date_derniere_connexion,
                 date_modification=admin.date_modification,
@@ -136,6 +144,8 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
             model.telephone_verifie = admin.telephone_verifie
             model.code_validation = admin.code_validation
             model.code_validation_expiration = admin.code_validation_expiration
+            model.code_reinitialisation = admin.code_reinitialisation
+            model.code_reinitialisation_expiration = admin.code_reinitialisation_expiration
             model.date_creation = admin.date_creation
             model.date_derniere_connexion = admin.date_derniere_connexion
             model.date_modification = admin.date_modification
@@ -165,6 +175,8 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
                 telephone_verifie=admin.telephone_verifie,
                 code_validation=admin.code_validation,
                 code_validation_expiration=admin.code_validation_expiration,
+                code_reinitialisation=admin.code_reinitialisation,
+                code_reinitialisation_expiration=admin.code_reinitialisation_expiration,
                 date_creation=admin.date_creation,
                 date_derniere_connexion=admin.date_derniere_connexion,
                 date_modification=admin.date_modification,
@@ -182,6 +194,8 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
             model.telephone_verifie = admin.telephone_verifie
             model.code_validation = admin.code_validation
             model.code_validation_expiration = admin.code_validation_expiration
+            model.code_reinitialisation = admin.code_reinitialisation
+            model.code_reinitialisation_expiration = admin.code_reinitialisation_expiration
             model.date_creation = admin.date_creation
             model.date_derniere_connexion = admin.date_derniere_connexion
             model.date_modification = admin.date_modification

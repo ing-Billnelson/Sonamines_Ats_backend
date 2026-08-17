@@ -3,6 +3,8 @@
 from .auth_schemas import (
     ConnexionRequest,
     CreerCompteRequest,
+    MotDePasseOublieRequest,
+    ReinitialiserMotDePasseRequest,
     TokenResponse,
     UtilisateurResponse,
     ValiderCompteRequest,
@@ -44,6 +46,8 @@ __all__ = [
     # Auth schemas
     "ConnexionRequest",
     "CreerCompteRequest",
+    "MotDePasseOublieRequest",
+    "ReinitialiserMotDePasseRequest",
     "TokenResponse",
     "UtilisateurResponse",
     "ValiderCompteRequest",

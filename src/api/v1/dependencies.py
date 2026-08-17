@@ -21,6 +21,8 @@ from ...application.use_cases import (
     MarquerNotificationLueUseCase,
     NotifierUtilisateurUseCase,
     ValiderCompteUseCase,
+    DemanderReinitialisationMotDePasseUseCase,
+    ReinitialiserMotDePasseUseCase,
     CreerOffreUseCase,
     PublierOffreUseCase,
     CloturerOffreUseCase,
@@ -177,6 +179,28 @@ def get_valider_compte_use_case(
     return ValiderCompteUseCase(
         utilisateur_repository=utilisateur_repository,
         notifier_utilisateur=notifier_utilisateur,
+    )
+
+
+def get_demander_reinitialisation_mot_de_passe_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+) -> DemanderReinitialisationMotDePasseUseCase:
+    """Factory pour le use case de demande de réinitialisation de mot de passe."""
+    return DemanderReinitialisationMotDePasseUseCase(
+        utilisateur_repository=utilisateur_repository,
+        notifier_utilisateur=notifier_utilisateur,
+    )
+
+
+def get_reinitialiser_mot_de_passe_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    password_hasher: PasswordHasher = Depends(get_password_hasher),
+) -> ReinitialiserMotDePasseUseCase:
+    """Factory pour le use case de réinitialisation de mot de passe."""
+    return ReinitialiserMotDePasseUseCase(
+        utilisateur_repository=utilisateur_repository,
+        password_hasher=password_hasher,
     )
 
 

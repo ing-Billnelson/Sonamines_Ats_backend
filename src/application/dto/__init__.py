@@ -13,7 +13,9 @@ from .candidature_dto import (
 from .compte_dto import (
     AuthentificationDTO,
     CreerCompteDTO,
+    DemanderReinitialisationDTO,
     ModifierCanalNotificationDTO,
+    ReinitialiserMotDePasseDTO,
     TokenDTO,
     UtilisateurDTO,
     ValiderCompteDTO,
@@ -40,7 +42,9 @@ __all__ = [
     # Compte DTOs
     "AuthentificationDTO",
     "CreerCompteDTO",
+    "DemanderReinitialisationDTO",
     "ModifierCanalNotificationDTO",
+    "ReinitialiserMotDePasseDTO",
     "TokenDTO",
     "UtilisateurDTO",
     "ValiderCompteDTO",

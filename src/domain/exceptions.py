@@ -141,6 +141,14 @@ class CodeValidationInvalideError(DomainException):
         self.message = message
 
 
+class CodeReinitialisationInvalideError(DomainException):
+    """Erreur levée quand le code de réinitialisation est incorrect ou expiré."""
+
+    def __init__(self, message: str = "Code de réinitialisation incorrect ou expiré"):
+        super().__init__(message)
+        self.message = message
+
+
 class StatutCandidatureInvalideError(DomainException):
     """Erreur levée lors d'une transition de statut invalide."""
 

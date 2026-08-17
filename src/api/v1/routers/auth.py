@@ -7,26 +7,39 @@ from ....application.use_cases import (
     CreerCompteCandidatUseCase,
     ValiderCompteUseCase,
     AuthentifierUseCase,
+    DemanderReinitialisationMotDePasseUseCase,
+    ReinitialiserMotDePasseUseCase,
 )
 from ....application.dto import (
     CreerCompteDTO,
     ValiderCompteDTO,
     AuthentificationDTO,
+    DemanderReinitialisationDTO,
+    ReinitialiserMotDePasseDTO,
 )
 from ....domain.exceptions import (
     UtilisateurExistantError,
     AuthentificationEchoueeError,
     UtilisateurIntrouvableError,
+    CodeReinitialisationInvalideError,
 )
 from ..schemas import (
     CreerCompteRequest,
     ValiderCompteRequest,
+    MotDePasseOublieRequest,
+    ReinitialiserMotDePasseRequest,
     ConnexionRequest,
     TokenResponse,
     UtilisateurResponse,
     SuccessResponse,
 )
-from ..dependencies import get_creer_compte_candidat_use_case, get_authentifier_use_case, get_valider_compte_use_case
+from ..dependencies import (
+    get_creer_compte_candidat_use_case,
+    get_authentifier_use_case,
+    get_valider_compte_use_case,
+    get_demander_reinitialisation_mot_de_passe_use_case,
+    get_reinitialiser_mot_de_passe_use_case,
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 security = HTTPBearer()
@@ -135,6 +148,64 @@ async def valider_compte(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={"error": "ValidationError", "message": str(e)},
         )
+
+
+@router.post(
+    "/mot-de-passe-oublie",
+    response_model=SuccessResponse,
+    summary="Demander un code de réinitialisation",
+    description="Envoie un code de réinitialisation si l'email existe (réponse générique, anti-énumération)",
+)
+async def demander_reinitialisation(
+    donnees: MotDePasseOublieRequest,
+    use_case: DemanderReinitialisationMotDePasseUseCase = Depends(
+        get_demander_reinitialisation_mot_de_passe_use_case
+    ),
+):
+    """Demande un code de réinitialisation de mot de passe."""
+    dto = DemanderReinitialisationDTO(email=donnees.email)
+
+    await use_case.executer(dto)
+
+    # Réponse générique : ne révèle jamais si l'email existe.
+    return SuccessResponse(
+        success=True,
+        message="Si ce compte existe, un code de réinitialisation a été envoyé",
+    )
+
+
+@router.post(
+    "/reinitialiser-mot-de-passe",
+    response_model=SuccessResponse,
+    summary="Réinitialiser le mot de passe",
+    description="Réinitialise le mot de passe avec le code reçu",
+)
+async def reinitialiser_mot_de_passe(
+    donnees: ReinitialiserMotDePasseRequest,
+    use_case: ReinitialiserMotDePasseUseCase = Depends(
+        get_reinitialiser_mot_de_passe_use_case
+    ),
+):
+    """Réinitialise le mot de passe avec un code."""
+    dto = ReinitialiserMotDePasseDTO(
+        email=donnees.email,
+        code_reinitialisation=donnees.code_reinitialisation,
+        nouveau_mot_de_passe=donnees.nouveau_mot_de_passe,
+    )
+
+    try:
+        await use_case.executer(dto)
+    except (UtilisateurIntrouvableError, CodeReinitialisationInvalideError):
+        # Réponse générique : ne révèle pas si l'email existait.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error": "CodeInvalide", "message": "Code invalide ou expiré"},
+        )
+
+    return SuccessResponse(
+        success=True,
+        message="Votre mot de passe a été réinitialisé avec succès",
+    )
 
 
 @router.post(

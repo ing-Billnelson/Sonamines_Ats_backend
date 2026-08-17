@@ -27,6 +27,22 @@ class ValiderCompteDTO:
 
 
 @dataclass
+class DemanderReinitialisationDTO:
+    """DTO pour demander un code de réinitialisation du mot de passe."""
+
+    email: str
+
+
+@dataclass
+class ReinitialiserMotDePasseDTO:
+    """DTO pour réinitialiser le mot de passe avec un code."""
+
+    email: str
+    code_reinitialisation: str
+    nouveau_mot_de_passe: str
+
+
+@dataclass
 class AuthentificationDTO:
     """DTO pour l'authentification d'un utilisateur."""
 

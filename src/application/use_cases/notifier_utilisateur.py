@@ -61,7 +61,10 @@ class NotifierUtilisateurUseCase:
             # COMPTE_CREE : le code de validation est envoyé pour permettre la
             # vérification — le canal ne peut donc pas encore être vérifié, on
             # envoie directement sans passer par _canal_est_verifie().
-            if evenement == TypeEvenement.COMPTE_CREE:
+            # MOT_DE_PASSE_REINITIALISE : le code de réinitialisation doit être
+            # délivré pour permettre une récupération d'accès, indépendamment de
+            # l'état de vérification du canal. On envoie donc directement aussi.
+            if evenement in (TypeEvenement.COMPTE_CREE, TypeEvenement.MOT_DE_PASSE_REINITIALISE):
                 pass
             # Autres événements : n'envoyer que si le canal est déjà vérifié.
             elif not self._canal_est_verifie(utilisateur):

@@ -59,6 +59,36 @@ class ConnexionRequest(BaseModel):
         }
 
 
+class MotDePasseOublieRequest(BaseModel):
+    """Schema de requête pour demander un code de réinitialisation de mot de passe."""
+
+    email: EmailStr
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "candidat@example.com"
+            }
+        }
+
+
+class ReinitialiserMotDePasseRequest(BaseModel):
+    """Schema de requête pour réinitialiser le mot de passe avec un code."""
+
+    email: EmailStr
+    code_reinitialisation: str = Field(..., min_length=6, max_length=10, description="Code de réinitialisation reçu")
+    nouveau_mot_de_passe: str = Field(..., min_length=8, description="Nouveau mot de passe (minimum 8 caractères)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "candidat@example.com",
+                "code_reinitialisation": "123456",
+                "nouveau_mot_de_passe": "nouveaumotdepasse123"
+            }
+        }
+
+
 class UtilisateurResponse(BaseModel):
     """Schema de réponse pour les informations utilisateur."""
 
