@@ -10,9 +10,14 @@ from .auth_schemas import (
     ValiderCompteRequest,
 )
 from .candidat_schemas import (
+    AjouterExperienceRequest,
+    AjouterFormationRequest,
     CandidatureResponse,
     DocumentResponse,
+    ExperienceResponse,
+    FormationResponse,
     HistoriqueStatutResponse,
+    ModifierProfilRequest,
     SoumettreKandidatureRequest,
     TeleverserDocumentRequest,
 )
@@ -52,9 +57,14 @@ __all__ = [
     "UtilisateurResponse",
     "ValiderCompteRequest",
     # Candidat schemas
+    "AjouterExperienceRequest",
+    "AjouterFormationRequest",
     "CandidatureResponse",
     "DocumentResponse",
+    "ExperienceResponse",
+    "FormationResponse",
     "HistoriqueStatutResponse",
+    "ModifierProfilRequest",
     "SoumettreKandidatureRequest",
     "TeleverserDocumentRequest",
     # Candidature schemas (RH)

@@ -19,6 +19,11 @@ from .compte_dto import (
     TokenDTO,
     UtilisateurDTO,
     ValiderCompteDTO,
+    ModifierProfilDTO,
+    FormationDTO,
+    AjouterFormationDTO,
+    ExperienceDTO,
+    AjouterExperienceDTO,
 )
 from .notification_dto import (
     ListerNotificationsDTO,
@@ -48,6 +53,11 @@ __all__ = [
     "TokenDTO",
     "UtilisateurDTO",
     "ValiderCompteDTO",
+    "ModifierProfilDTO",
+    "FormationDTO",
+    "AjouterFormationDTO",
+    "ExperienceDTO",
+    "AjouterExperienceDTO",
     # Offre DTOs
     "CreerOffreDTO",
     "ModifierOffreDTO",

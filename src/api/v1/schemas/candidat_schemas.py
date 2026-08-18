@@ -7,6 +7,115 @@ from ....domain.entities.document import TypeDocument
 from ....domain.enums import StatutCandidature
 
 
+class ModifierProfilRequest(BaseModel):
+    """Schema de requête pour modifier le profil candidat."""
+
+    nom: Optional[str] = Field(None, min_length=2, max_length=100, description="Nom de famille")
+    prenom: Optional[str] = Field(None, min_length=2, max_length=100, description="Prénom")
+    telephone: Optional[str] = Field(None, description="Numéro de téléphone")
+    linkedin_url: Optional[str] = Field(None, description="URL du profil LinkedIn")
+    adresse: Optional[str] = Field(None, description="Adresse du candidat")
+    competences: Optional[List[str]] = Field(None, description="Compétences du candidat")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "nom": "Diop",
+                "prenom": "Amadou",
+                "telephone": "+221771234567",
+                "linkedin_url": "https://linkedin.com/in/amadou",
+                "adresse": "Dakar, Sénégal",
+                "competences": ["Python", "SQL"]
+            }
+        }
+
+
+class FormationResponse(BaseModel):
+    """Schema de réponse pour une formation."""
+
+    id: str
+    etablissement: str
+    diplome: str
+    annee_debut: int
+    annee_fin: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "etablissement": "Université Cheikh Anta Diop",
+                "diplome": "Master en Informatique",
+                "annee_debut": 2018,
+                "annee_fin": 2020
+            }
+        }
+
+
+class AjouterFormationRequest(BaseModel):
+    """Schema de requête pour ajouter une formation."""
+
+    etablissement: str = Field(..., min_length=2, max_length=255, description="Établissement")
+    diplome: str = Field(..., min_length=2, max_length=255, description="Diplôme obtenu")
+    annee_debut: int = Field(..., description="Année de début")
+    annee_fin: Optional[int] = Field(None, description="Année de fin")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "etablissement": "Université Cheikh Anta Diop",
+                "diplome": "Master en Informatique",
+                "annee_debut": 2018,
+                "annee_fin": 2020
+            }
+        }
+
+
+class ExperienceResponse(BaseModel):
+    """Schema de réponse pour une expérience professionnelle."""
+
+    id: str
+    entreprise: str
+    poste: str
+    date_debut: str
+    date_fin: Optional[str] = None
+    description: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "entreprise": "SONAMINES SA",
+                "poste": "Développeur Backend",
+                "date_debut": "2021-01-15T00:00:00",
+                "date_fin": "2023-06-30T00:00:00",
+                "description": "Développement d'APIs REST"
+            }
+        }
+
+
+class AjouterExperienceRequest(BaseModel):
+    """Schema de requête pour ajouter une expérience professionnelle."""
+
+    entreprise: str = Field(..., min_length=2, max_length=255, description="Entreprise")
+    poste: str = Field(..., min_length=2, max_length=255, description="Poste occupé")
+    date_debut: str = Field(..., description="Date de début (ISO)")
+    date_fin: Optional[str] = Field(None, description="Date de fin (ISO)")
+    description: Optional[str] = Field(None, description="Description")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "entreprise": "SONAMINES SA",
+                "poste": "Développeur Backend",
+                "date_debut": "2021-01-15",
+                "date_fin": "2023-06-30",
+                "description": "Développement d'APIs REST"
+            }
+        }
+
+
 class SoumettreKandidatureRequest(BaseModel):
     """Schema de requête pour soumettre une candidature."""
 

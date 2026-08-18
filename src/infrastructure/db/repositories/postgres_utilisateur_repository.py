@@ -47,7 +47,13 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
         }
 
         if model.type_utilisateur == "candidat":
-            return Candidat(**kwargs, photo_url=model.photo_url)
+            return Candidat(
+                **kwargs,
+                photo_url=model.photo_url,
+                linkedin_url=model.linkedin_url,
+                adresse=model.adresse,
+                competences=model.competences,
+            )
         elif model.type_utilisateur == "administrateur_rh":
             return AdministrateurRH(**kwargs)
         elif model.type_utilisateur == "super_administrateur":
@@ -81,6 +87,9 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
                 date_derniere_connexion=candidat.date_derniere_connexion,
                 date_modification=candidat.date_modification,
                 photo_url=candidat.photo_url,
+                linkedin_url=candidat.linkedin_url,
+                adresse=candidat.adresse,
+                competences=candidat.competences,
             )
             self._session.add(model)
         else:
@@ -101,6 +110,9 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
             model.date_derniere_connexion = candidat.date_derniere_connexion
             model.date_modification = candidat.date_modification
             model.photo_url = candidat.photo_url
+            model.linkedin_url = candidat.linkedin_url
+            model.adresse = candidat.adresse
+            model.competences = candidat.competences
 
         await self._session.flush()
         return self._model_vers_entite(model)

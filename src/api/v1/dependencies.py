@@ -23,6 +23,12 @@ from ...application.use_cases import (
     ValiderCompteUseCase,
     DemanderReinitialisationMotDePasseUseCase,
     ReinitialiserMotDePasseUseCase,
+    ModifierProfilCandidatUseCase,
+    ObtenirProfilCandidatUseCase,
+    AjouterFormationUseCase,
+    SupprimerFormationUseCase,
+    AjouterExperienceUseCase,
+    SupprimerExperienceUseCase,
     CreerOffreUseCase,
     PublierOffreUseCase,
     CloturerOffreUseCase,
@@ -31,7 +37,7 @@ from ...application.use_cases import (
 from ...application.dto import UtilisateurDTO
 from ...domain.entities import AdministrateurRH, SuperAdministrateur
 from ...domain.exceptions import AuthentificationEchoueeError
-from ...domain.ports import NotificationRepository
+from ...domain.ports import NotificationRepository, ProfilCandidatRepository
 from ...infrastructure.config import settings
 from ...infrastructure.db.session import get_db
 from ...infrastructure.db.repositories import (
@@ -39,6 +45,7 @@ from ...infrastructure.db.repositories import (
     PostgresCandidatureRepository,
     PostgresOffreRepository,
     PostgresNotificationRepository,
+    PostgresProfilCandidatRepository,
 )
 from ...infrastructure.notification import EmailAdapter, SMSAdapter, NotificationRouter
 from ...infrastructure.search import ElasticsearchAdapter
@@ -76,6 +83,13 @@ def get_notification_repository(
 ) -> PostgresNotificationRepository:
     """Factory pour le repository notification PostgreSQL."""
     return PostgresNotificationRepository(session)
+
+
+def get_profil_candidat_repository(
+    session: AsyncSession = Depends(get_db)
+) -> PostgresProfilCandidatRepository:
+    """Factory pour le repository profil candidat PostgreSQL."""
+    return PostgresProfilCandidatRepository(session)
 
 
 def get_email_adapter() -> EmailAdapter:
@@ -232,6 +246,72 @@ def get_supprimer_photo_profil_use_case(
     return SupprimerPhotoProfilUseCase(
         utilisateur_repository=utilisateur_repository,
         storage_port=storage_port,
+    )
+
+
+def get_modifier_profil_candidat_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    profil_candidat_repository: ProfilCandidatRepository = Depends(get_profil_candidat_repository),
+) -> ModifierProfilCandidatUseCase:
+    """Factory pour le use case de modification du profil candidat."""
+    return ModifierProfilCandidatUseCase(
+        utilisateur_repository=utilisateur_repository,
+        profil_candidat_repository=profil_candidat_repository,
+    )
+
+
+def get_obtenir_profil_candidat_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    profil_candidat_repository: ProfilCandidatRepository = Depends(get_profil_candidat_repository),
+) -> ObtenirProfilCandidatUseCase:
+    """Factory pour le use case de récupération du profil candidat."""
+    return ObtenirProfilCandidatUseCase(
+        utilisateur_repository=utilisateur_repository,
+        profil_candidat_repository=profil_candidat_repository,
+    )
+
+
+def get_ajouter_formation_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    profil_candidat_repository: ProfilCandidatRepository = Depends(get_profil_candidat_repository),
+) -> AjouterFormationUseCase:
+    """Factory pour le use case d'ajout de formation."""
+    return AjouterFormationUseCase(
+        utilisateur_repository=utilisateur_repository,
+        profil_candidat_repository=profil_candidat_repository,
+    )
+
+
+def get_supprimer_formation_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    profil_candidat_repository: ProfilCandidatRepository = Depends(get_profil_candidat_repository),
+) -> SupprimerFormationUseCase:
+    """Factory pour le use case de suppression de formation."""
+    return SupprimerFormationUseCase(
+        utilisateur_repository=utilisateur_repository,
+        profil_candidat_repository=profil_candidat_repository,
+    )
+
+
+def get_ajouter_experience_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    profil_candidat_repository: ProfilCandidatRepository = Depends(get_profil_candidat_repository),
+) -> AjouterExperienceUseCase:
+    """Factory pour le use case d'ajout d'expérience."""
+    return AjouterExperienceUseCase(
+        utilisateur_repository=utilisateur_repository,
+        profil_candidat_repository=profil_candidat_repository,
+    )
+
+
+def get_supprimer_experience_use_case(
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    profil_candidat_repository: ProfilCandidatRepository = Depends(get_profil_candidat_repository),
+) -> SupprimerExperienceUseCase:
+    """Factory pour le use case de suppression d'expérience."""
+    return SupprimerExperienceUseCase(
+        utilisateur_repository=utilisateur_repository,
+        profil_candidat_repository=profil_candidat_repository,
     )
 
 
