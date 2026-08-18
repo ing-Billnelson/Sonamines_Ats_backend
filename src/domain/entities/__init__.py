@@ -4,6 +4,8 @@ from .administrateur import Administrateur, AdministrateurRH, SuperAdministrateu
 from .candidat import Candidat
 from .candidature import Candidature
 from .document import Document, TypeDocument
+from .experience import Experience
+from .formation import Formation
 from .historique_statut import HistoriqueStatut
 from .notification import Notification
 from .offre import Offre, StatutOffre
@@ -15,6 +17,8 @@ __all__ = [
     "Candidat",
     "Candidature",
     "Document",
+    "Experience",
+    "Formation",
     "HistoriqueStatut",
     "Notification",
     "Offre",

@@ -1,6 +1,6 @@
 """Entité candidat."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
@@ -15,6 +15,9 @@ class Candidat(Utilisateur):
     """Entité représentant un candidat à l'emploi ou au stage."""
 
     photo_url: Optional[str] = None  # URL de la photo de profil (facultative)
+    linkedin_url: Optional[str] = None  # URL du profil LinkedIn (facultative)
+    adresse: Optional[str] = None  # Adresse du candidat (facultative)
+    competences: list[str] = field(default_factory=list)  # Compétences du candidat
 
     @classmethod
     def creer_nouveau(

@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, DateTime, String, Boolean, Enum as SQLAEnum
+from sqlalchemy import Column, DateTime, String, Boolean, ARRAY, Enum as SQLAEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -63,6 +63,11 @@ class UtilisateurModel(Base):
 
 class CandidatModel(UtilisateurModel):
     """Modèle SQLAlchemy pour les candidats."""
+
+    # Champs spécifiques aux candidats (stockés sur la table utilisateurs)
+    linkedin_url = Column(String(500), nullable=True)
+    adresse = Column(String(500), nullable=True)
+    competences = Column(ARRAY(String), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "candidat",
