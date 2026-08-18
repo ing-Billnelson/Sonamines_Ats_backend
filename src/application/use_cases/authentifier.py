@@ -8,7 +8,12 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, InvalidHashError
 from jose import jwt, JWTError
 
-from ...domain.entities import Utilisateur
+from ...domain.entities import (
+    AdministrateurRH,
+    Candidat,
+    SuperAdministrateur,
+    Utilisateur,
+)
 from ...domain.exceptions import (
     AuthentificationEchoueeError,
     UtilisateurIntrouvableError,
@@ -143,6 +148,7 @@ class AuthentifierUseCase:
             "email": str(utilisateur.email),
             "nom_complet": utilisateur.nom_complet,
             "statut": utilisateur.statut.value,
+            "role": self._determiner_role(utilisateur),
             "exp": expire,
             "iat": datetime.utcnow(),
         }
@@ -163,6 +169,16 @@ class AuthentifierUseCase:
             # TODO: Implémenter la distinction admin RH/super admin
             # Pour l'instant, on suppose que c'est géré dans le repository
             pass
+
+    def _determiner_role(self, utilisateur: Utilisateur) -> str:
+        """Détermine le rôle/type d'utilisateur à partir du type concret."""
+        if isinstance(utilisateur, Candidat):
+            return "candidat"
+        elif isinstance(utilisateur, SuperAdministrateur):
+            return "super_administrateur"
+        elif isinstance(utilisateur, AdministrateurRH):
+            return "administrateur_rh"
+        return "utilisateur"
 
     def _convertir_en_dto(self, utilisateur: Utilisateur) -> UtilisateurDTO:
         """Convertit un utilisateur en DTO."""
@@ -186,4 +202,5 @@ class AuthentifierUseCase:
                 else None
             ),
             photo_url=photo_url,
+            role=self._determiner_role(utilisateur),
         )

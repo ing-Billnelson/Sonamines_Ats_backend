@@ -1,6 +1,6 @@
 """DTOs pour la gestion des comptes utilisateur."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from ...domain.enums import CanalNotification, StatutCompte
@@ -75,6 +75,12 @@ class UtilisateurDTO:
     date_creation: str  # ISO format
     date_derniere_connexion: Optional[str] = None
     photo_url: Optional[str] = None  # Seulement pour les candidats
+    role: Optional[str] = None  # Type d'utilisateur: candidat, administrateur_rh, super_administrateur
+    linkedin_url: Optional[str] = None  # Seulement pour les candidats
+    adresse: Optional[str] = None  # Seulement pour les candidats
+    competences: list[str] = field(default_factory=list)  # Seulement pour les candidats
+    formations: list["FormationDTO"] = field(default_factory=list)  # Seulement pour les candidats
+    experiences: list["ExperienceDTO"] = field(default_factory=list)  # Seulement pour les candidats
 
 
 @dataclass
@@ -85,3 +91,62 @@ class TokenDTO:
     token_type: str
     expires_in: int
     utilisateur: UtilisateurDTO
+
+
+@dataclass
+class ModifierProfilDTO:
+    """DTO pour la modification du profil candidat."""
+
+    candidat_id: str
+    nom: Optional[str] = None
+    prenom: Optional[str] = None
+    telephone: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    adresse: Optional[str] = None
+    competences: Optional[list[str]] = None
+
+
+@dataclass
+class FormationDTO:
+    """DTO de sortie pour une formation."""
+
+    id: str
+    etablissement: str
+    diplome: str
+    annee_debut: int
+    annee_fin: Optional[int] = None
+
+
+@dataclass
+class AjouterFormationDTO:
+    """DTO pour ajouter une formation."""
+
+    candidat_id: str
+    etablissement: str
+    diplome: str
+    annee_debut: int
+    annee_fin: Optional[int] = None
+
+
+@dataclass
+class ExperienceDTO:
+    """DTO de sortie pour une expérience professionnelle."""
+
+    id: str
+    entreprise: str
+    poste: str
+    date_debut: str  # ISO format
+    date_fin: Optional[str] = None  # ISO format
+    description: Optional[str] = None
+
+
+@dataclass
+class AjouterExperienceDTO:
+    """DTO pour ajouter une expérience professionnelle."""
+
+    candidat_id: str
+    entreprise: str
+    poste: str
+    date_debut: str  # ISO format
+    date_fin: Optional[str] = None  # ISO format
+    description: Optional[str] = None

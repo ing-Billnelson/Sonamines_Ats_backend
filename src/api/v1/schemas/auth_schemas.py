@@ -1,9 +1,10 @@
 """Schemas Pydantic pour l'authentification."""
 
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import List, Optional
 
 from ....domain.enums import CanalNotification, StatutCompte
+from .candidat_schemas import ExperienceResponse, FormationResponse
 
 
 class CreerCompteRequest(BaseModel):
@@ -105,6 +106,12 @@ class UtilisateurResponse(BaseModel):
     date_creation: str
     date_derniere_connexion: Optional[str] = None
     photo_url: Optional[str] = None
+    role: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    adresse: Optional[str] = None
+    competences: Optional[List[str]] = None
+    formations: List[FormationResponse] = []
+    experiences: List[ExperienceResponse] = []
 
     class Config:
         from_attributes = True
@@ -122,7 +129,13 @@ class UtilisateurResponse(BaseModel):
                 "telephone_verifie": False,
                 "date_creation": "2024-01-15T10:30:00Z",
                 "date_derniere_connexion": "2024-01-15T14:20:00Z",
-                "photo_url": None
+                "photo_url": None,
+                "role": "candidat",
+                "linkedin_url": "https://linkedin.com/in/amadou",
+                "adresse": "Dakar, Sénégal",
+                "competences": ["Python", "SQL"],
+                "formations": [],
+                "experiences": []
             }
         }
 

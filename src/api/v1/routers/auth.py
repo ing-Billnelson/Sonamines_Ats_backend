@@ -86,6 +86,7 @@ async def creer_compte_candidat(
             date_creation=utilisateur_dto.date_creation,
             date_derniere_connexion=utilisateur_dto.date_derniere_connexion,
             photo_url=utilisateur_dto.photo_url,
+            role=utilisateur_dto.role,
         )
 
     except UtilisateurExistantError as e:
@@ -136,6 +137,7 @@ async def valider_compte(
             date_creation=utilisateur_dto.date_creation,
             date_derniere_connexion=utilisateur_dto.date_derniere_connexion,
             photo_url=utilisateur_dto.photo_url,
+            role=utilisateur_dto.role,
         )
 
     except UtilisateurIntrouvableError as e:
@@ -248,6 +250,7 @@ async def se_connecter(
                 date_creation=token_dto.utilisateur.date_creation,
                 date_derniere_connexion=token_dto.utilisateur.date_derniere_connexion,
                 photo_url=token_dto.utilisateur.photo_url,
+                role=token_dto.utilisateur.role,
             ),
         )
 
@@ -287,6 +290,7 @@ async def obtenir_profil(
             date_creation=utilisateur_dto.date_creation,
             date_derniere_connexion=utilisateur_dto.date_derniere_connexion,
             photo_url=utilisateur_dto.photo_url,
+            role=utilisateur_dto.role,
         )
 
     except AuthentificationEchoueeError as e:
