@@ -8,6 +8,7 @@ from ....application.use_cases import (
     PublierOffreUseCase,
     CloturerOffreUseCase,
     CreerCompteAdministrateurRHUseCase,
+    ListerMesOffresUseCase,
 )
 from ....application.dto import CreerOffreDTO, CreerCompteDTO
 from ....domain.exceptions import OffreIntrouvableError, UtilisateurExistantError
@@ -25,9 +26,34 @@ from ..dependencies import (
     get_publier_offre_use_case,
     get_cloturer_offre_use_case,
     get_creer_compte_administrateur_rh_use_case,
+    get_lister_mes_offres_use_case,
 )
 
 router = APIRouter(prefix="/admin", tags=["Administration"])
+
+
+def _offre_dto_vers_response(offre_dto) -> OffreResponse:
+    """Convertit un OffreDTO en schema de réponse OffreResponse."""
+    return OffreResponse(
+        id=offre_dto.id,
+        numero_reference=offre_dto.numero_reference,
+        titre=offre_dto.titre,
+        description=offre_dto.description,
+        type_offre=offre_dto.type_offre,
+        type_contrat=offre_dto.type_contrat,
+        type_stage=offre_dto.type_stage,
+        statut=offre_dto.statut,
+        lieu=offre_dto.lieu,
+        date_limite_candidature=offre_dto.date_limite_candidature,
+        salaire_min=offre_dto.salaire_min,
+        salaire_max=offre_dto.salaire_max,
+        competences_requises=offre_dto.competences_requises,
+        experience_requise=offre_dto.experience_requise,
+        createur_nom_complet=offre_dto.createur_nom_complet,
+        date_creation=offre_dto.date_creation,
+        date_publication=offre_dto.date_publication,
+        date_cloture=offre_dto.date_cloture,
+    )
 
 
 # Routes Super Admin
@@ -155,13 +181,19 @@ async def creer_offre(
 )
 async def lister_mes_offres(
     utilisateur_courant = Depends(get_admin_rh_courant),
+    use_case: ListerMesOffresUseCase = Depends(get_lister_mes_offres_use_case),
 ):
-    """Liste les offres créées par l'admin RH."""
-    # TODO: Vérifier les droits Admin RH
-    # TODO: Implémenter le listage des offres
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Endpoint en cours d'implémentation"},
+    """Liste les offres créées par l'admin RH connecté."""
+    offres_dto = await use_case.executer(createur_id=utilisateur_courant.id)
+
+    offres = [_offre_dto_vers_response(dto) for dto in offres_dto]
+
+    return OffresListResponse(
+        offres=offres,
+        total=len(offres),
+        page=1,
+        taille_page=len(offres) if offres else 1,
+        pages_total=1,
     )
 
 

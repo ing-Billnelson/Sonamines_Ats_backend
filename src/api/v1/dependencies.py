@@ -29,6 +29,7 @@ from ...application.use_cases import (
     SupprimerFormationUseCase,
     AjouterExperienceUseCase,
     SupprimerExperienceUseCase,
+    ListerMesOffresUseCase,
     CreerOffreUseCase,
     PublierOffreUseCase,
     CloturerOffreUseCase,
@@ -379,6 +380,17 @@ def get_cloturer_offre_use_case(
         offre_repository=offre_repository,
         utilisateur_repository=utilisateur_repository,
         search_port=search_port,
+    )
+
+
+def get_lister_mes_offres_use_case(
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+) -> ListerMesOffresUseCase:
+    """Factory pour le use case de listage des offres d'un admin RH."""
+    return ListerMesOffresUseCase(
+        offre_repository=offre_repository,
+        utilisateur_repository=utilisateur_repository,
     )
 
 

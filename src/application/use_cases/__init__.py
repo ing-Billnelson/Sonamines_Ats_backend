@@ -10,6 +10,7 @@ from .creer_compte_candidat import CreerCompteCandidatUseCase
 from .creer_offre import CreerOffreUseCase
 from .demander_reinitialisation_mot_de_passe import DemanderReinitialisationMotDePasseUseCase
 from .lister_notifications import ListerNotificationsUseCase
+from .lister_mes_offres import ListerMesOffresUseCase
 from .marquer_notification_lue import MarquerNotificationLueUseCase
 from .modifier_canal_notification import ModifierCanalNotificationUseCase
 from .modifier_profil_candidat import ModifierProfilCandidatUseCase
@@ -55,6 +56,7 @@ __all__ = [
     "ChangerStatutCandidatureUseCase",
     "PreselectionnerCandidatUseCase",
     # Offres
+    "ListerMesOffresUseCase",
     "CreerOffreUseCase",
     "PublierOffreUseCase",
     "CloturerOffreUseCase",
