@@ -4,9 +4,10 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 
 from ....domain.entities import Candidature, Document, HistoriqueStatut
+from ....domain.enums import StatutCandidature
 from ....domain.ports import CandidatureRepository
 from ....domain.value_objects import NumeroReference
 from ..models import CandidatureModel, DocumentModel, HistoriqueStatutModel
@@ -109,6 +110,41 @@ class PostgresCandidatureRepository(CandidatureRepository):
         """Liste toutes les candidatures spontanées."""
         # TODO: Implémenter la récupération et conversion
         return []
+
+    async def lister_toutes(
+        self,
+        statut: Optional[StatutCandidature] = None,
+        offre_id: Optional[UUID] = None,
+        spontanee: Optional[bool] = None,
+        page: int = 1,
+        taille_page: int = 20,
+    ) -> tuple[list[Candidature], int]:
+        """Liste les candidatures avec filtres optionnels et pagination."""
+        conditions = []
+        if statut is not None:
+            conditions.append(CandidatureModel.statut == statut)
+        if offre_id is not None:
+            conditions.append(CandidatureModel.offre_id == offre_id)
+        if spontanee is True:
+            conditions.append(CandidatureModel.offre_id.is_(None))
+        elif spontanee is False:
+            conditions.append(CandidatureModel.offre_id.is_not(None))
+
+        base_query = select(CandidatureModel)
+        if conditions:
+            base_query = base_query.where(*conditions)
+
+        count_query = select(func.count()).select_from(CandidatureModel)
+        if conditions:
+            count_query = count_query.where(*conditions)
+        total_result = await self._session.execute(count_query)
+        total = total_result.scalar_one()
+
+        result = await self._session.execute(
+            base_query.limit(taille_page).offset((page - 1) * taille_page)
+        )
+        models = result.scalars().all()
+        return [self._model_vers_entite(model) for model in models], total
 
     def _model_vers_entite_document(self, model: DocumentModel) -> Document:
         """Convertit un modèle SQLAlchemy document en entité domaine."""
