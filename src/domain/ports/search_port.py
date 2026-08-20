@@ -1,10 +1,10 @@
 """Port pour l'indexation et la recherche avec Elasticsearch."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
-from ..entities import Candidature, Offre
+from ..entities import Candidat, Candidature, Offre
 
 
 class SearchPort(ABC):
@@ -16,8 +16,23 @@ class SearchPort(ABC):
         pass
 
     @abstractmethod
-    async def indexer_candidature(self, candidature: Candidature) -> bool:
-        """Indexe une candidature dans Elasticsearch."""
+    async def indexer_candidature(
+        self,
+        candidature: Candidature,
+        candidat: Optional[Candidat] = None,
+        offre: Optional[Offre] = None,
+    ) -> bool:
+        """Indexe une candidature dans Elasticsearch.
+
+        Args:
+            candidature: L'entité candidature à indexer
+            candidat: Entité candidat (optionnelle) pour dénormaliser les
+                champs de profil (nom, email, sexe, niveau_academique, etc.)
+                dans le document indexé.
+            offre: Entité offre (optionnelle) pour dénormaliser les champs de
+                l'offre associée (titre, lieu, type_offre, type_stage, etc.)
+                dans le document indexé.
+        """
         pass
 
     @abstractmethod
@@ -64,7 +79,7 @@ class SearchPort(ABC):
         criteres: Dict[str, Any],
         limit: int = 20,
         offset: int = 0,
-    ) -> List[Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], int]:
         """
         Recherche des candidatures selon les critères spécifiés.
 
@@ -77,11 +92,18 @@ class SearchPort(ABC):
                 - date_debut: date de début de période
                 - date_fin: date de fin de période
                 - spontanee: True pour les candidatures spontanées uniquement
+                - sexe, niveau_academique, diplome, domaine_formation, specialite,
+                  disponibilite, region_origine, region_residence: filtres keyword
+                  sur les champs dénormalisés du profil candidat
+                - competences, langues_parlees: filtres terms sur les champs tableau
+                - age_min, age_max: filtres range sur candidat_date_naissance
+                - type_offre: filtre sur offre_type_offre (EMPLOI/STAGE)
             limit: Nombre maximum de résultats
             offset: Décalage pour la pagination
 
         Returns:
-            Liste des candidatures trouvées avec leurs données de pertinence
+            Tuple (liste des candidatures trouvées avec leurs données de
+            pertinence, nombre total de résultats correspondant aux critères)
         """
         pass
 

@@ -1,12 +1,13 @@
 """Adapter Elasticsearch pour la recherche."""
 
-from typing import Any, Dict, List
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import ApiError, TransportError
 
-from ...domain.entities import Candidature, Offre
+from ...domain.entities import Candidat, Candidature, Offre
 from ...domain.exceptions import RechercheIndisponibleError
 from ...domain.ports import SearchPort
 from ..config import Settings
@@ -37,10 +38,15 @@ class ElasticsearchAdapter(SearchPort):
         except (ApiError, TransportError):
             return False
 
-    async def indexer_candidature(self, candidature: Candidature) -> bool:
+    async def indexer_candidature(
+        self,
+        candidature: Candidature,
+        candidat: Optional[Candidat] = None,
+        offre: Optional[Offre] = None,
+    ) -> bool:
         """Indexe une candidature dans Elasticsearch."""
         try:
-            document = self._candidature_vers_document(candidature)
+            document = self._candidature_vers_document(candidature, candidat, offre)
             
             await self._client.index(
                 index=self._index_candidatures,
@@ -107,8 +113,12 @@ class ElasticsearchAdapter(SearchPort):
         criteres: Dict[str, Any],
         limit: int = 20,
         offset: int = 0,
-    ) -> List[Dict[str, Any]]:
-        """Recherche des candidatures selon les critères."""
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        """Recherche des candidatures selon les critères.
+
+        Retourne un tuple (liste des candidatures de la page, nombre total de
+        résultats correspondant aux filtres).
+        """
         try:
             query = self._construire_requete_candidatures(criteres)
 
@@ -119,10 +129,13 @@ class ElasticsearchAdapter(SearchPort):
                     "size": limit,
                     "from": offset,
                     "sort": [{"date_soumission": {"order": "desc"}}],
+                    "track_total_hits": True,
                 }
             )
 
-            return self._traiter_reponse_recherche(response)
+            hits = self._traiter_reponse_recherche(response)
+            total = response["hits"]["total"]["value"]
+            return hits, total
         except (ApiError, TransportError) as e:
             raise RechercheIndisponibleError(str(e)) from e
 
@@ -180,9 +193,19 @@ class ElasticsearchAdapter(SearchPort):
             "date_limite_candidature": offre.date_limite_candidature.isoformat() if offre.date_limite_candidature else None,
         }
 
-    def _candidature_vers_document(self, candidature: Candidature) -> Dict[str, Any]:
-        """Convertit une candidature en document Elasticsearch."""
-        return {
+    def _candidature_vers_document(
+        self,
+        candidature: Candidature,
+        candidat: Optional[Candidat] = None,
+        offre: Optional[Offre] = None,
+    ) -> Dict[str, Any]:
+        """Convertit une candidature en document Elasticsearch.
+
+        Les champs dénormalisés (profil candidat et offre associée) ne sont
+        renseignés que si les entités ``candidat`` et/ou ``offre`` sont fournies ;
+        ils restent ``None`` sinon.
+        """
+        document: Dict[str, Any] = {
             "id": str(candidature.id),
             "numero_reference": str(candidature.numero_reference),
             "candidat_id": str(candidature.candidat_id),
@@ -194,6 +217,46 @@ class ElasticsearchAdapter(SearchPort):
             "date_derniere_modification": candidature.date_derniere_modification.isoformat(),
             "est_spontanee": candidature.est_spontanee(),
         }
+
+        # Champs dénormalisés du profil candidat
+        if candidat is not None:
+            document.update({
+                "candidat_nom": candidat.nom,
+                "candidat_prenom": candidat.prenom,
+                "candidat_email": str(candidat.email),
+                "candidat_sexe": candidat.sexe.value if candidat.sexe else None,
+                "candidat_date_naissance": (
+                    candidat.date_naissance.isoformat()
+                    if candidat.date_naissance else None
+                ),
+                "candidat_nationalite": candidat.nationalite,
+                "candidat_region_origine": candidat.region_origine,
+                "candidat_region_residence": candidat.region_residence,
+                "candidat_langues_parlees": candidat.langues_parlees,
+                "candidat_disponibilite": (
+                    candidat.disponibilite.value if candidat.disponibilite else None
+                ),
+                "candidat_niveau_academique": (
+                    candidat.niveau_academique.value
+                    if candidat.niveau_academique else None
+                ),
+                "candidat_domaine_formation": candidat.domaine_formation,
+                "candidat_specialite": candidat.specialite,
+                "candidat_competences": candidat.competences,
+            })
+
+        # Champs dénormalisés de l'offre associée
+        if offre is not None:
+            document.update({
+                "offre_titre": offre.titre,
+                "offre_lieu": offre.lieu,
+                "offre_type_offre": offre.type_offre.value,
+                "offre_type_stage": (
+                    offre.type_stage.value if offre.type_stage else None
+                ),
+            })
+
+        return document
 
     def _construire_requete_offres(self, criteres: Dict[str, Any]) -> Dict[str, Any]:
         """Construit une requête bool Elasticsearch pour les offres."""
@@ -290,18 +353,98 @@ class ElasticsearchAdapter(SearchPort):
             raise RechercheIndisponibleError(str(e)) from e
 
     def _construire_requete_candidatures(self, criteres: Dict[str, Any]) -> Dict[str, Any]:
-        """Construit une requête Elasticsearch pour les candidatures."""
-        # TODO: Implémenter la construction de requête complète
-        # Requête simple pour le scaffold
+        """Construit une requête bool Elasticsearch pour les candidatures.
+
+        Tous les critères facultatifs sont combinés avec un bool query
+        (must pour la pertinence textuelle, filter pour les filtres non scorés).
+        """
+        must: List[Dict[str, Any]] = []
+        filters: List[Dict[str, Any]] = []
+
+        # Recherche textuelle libre : numéro de référence, motivation, notes,
+        # et champs dénormalisés du candidat / de l'offre.
         if criteres.get("texte"):
-            return {
+            must.append({
                 "multi_match": {
                     "query": criteres["texte"],
-                    "fields": ["numero_reference^2", "message_motivation", "notes_internes"]
+                    "fields": [
+                        "numero_reference^2",
+                        "message_motivation",
+                        "notes_internes",
+                        "candidat_nom^2",
+                        "candidat_prenom",
+                        "offre_titre^2",
+                    ],
+                    "analyzer": "standard",
                 }
-            }
+            })
         else:
-            return {"match_all": {}}
+            must.append({"match_all": {}})
+
+        # Filtres d'égalité sur champs keyword
+        if criteres.get("statut"):
+            filters.append({"term": {"statut": criteres["statut"]}})
+        if criteres.get("offre_id"):
+            filters.append({"term": {"offre_id": criteres["offre_id"]}})
+        if criteres.get("spontanee") is not None:
+            filters.append({"term": {"est_spontanee": criteres["spontanee"]}})
+
+        # Nom du candidat : match insensible à la casse (champ text)
+        if criteres.get("candidat_nom"):
+            filters.append({"match": {"candidat_nom": criteres["candidat_nom"]}})
+
+        # Profil candidat : filtres keyword sur les champs dénormalisés
+        if criteres.get("sexe"):
+            filters.append({"term": {"candidat_sexe": criteres["sexe"]}})
+        if criteres.get("diplome"):
+            filters.append({"term": {"candidat_niveau_academique": criteres["diplome"]}})
+        if criteres.get("domaine_formation"):
+            filters.append({"term": {"candidat_domaine_formation": criteres["domaine_formation"]}})
+        if criteres.get("niveau_academique"):
+            filters.append({"term": {"candidat_niveau_academique": criteres["niveau_academique"]}})
+        if criteres.get("specialite"):
+            filters.append({"term": {"candidat_specialite": criteres["specialite"]}})
+        if criteres.get("region_origine"):
+            filters.append({"term": {"candidat_region_origine": criteres["region_origine"]}})
+        if criteres.get("region_residence"):
+            filters.append({"term": {"candidat_region_residence": criteres["region_residence"]}})
+        if criteres.get("disponibilite"):
+            filters.append({"term": {"candidat_disponibilite": criteres["disponibilite"]}})
+
+        # Filtres "terms" sur les champs tableau (au moins l'un d'eux)
+        if criteres.get("competences"):
+            filters.append({"terms": {"candidat_competences": criteres["competences"]}})
+        if criteres.get("langues_parlees"):
+            filters.append({"terms": {"candidat_langues_parlees": criteres["langues_parlees"]}})
+
+        # Caractéristiques de l'offre associée
+        if criteres.get("type_offre"):
+            filters.append({"term": {"offre_type_offre": criteres["type_offre"]}})
+
+        # Age : range sur candidat_date_naissance, calculé depuis la date du jour
+        age_range: Dict[str, Any] = {}
+        if criteres.get("age_min") is not None:
+            age_range["lte"] = (datetime.utcnow() - timedelta(days=365 * criteres["age_min"])).isoformat()
+        if criteres.get("age_max") is not None:
+            age_range["gte"] = (datetime.utcnow() - timedelta(days=365 * criteres["age_max"])).isoformat()
+        if age_range:
+            filters.append({"range": {"candidat_date_naissance": age_range}})
+
+        # Dates de candidature : range sur date_soumission
+        date_range: Dict[str, Any] = {}
+        if criteres.get("date_debut"):
+            date_range["gte"] = criteres["date_debut"]
+        if criteres.get("date_fin"):
+            date_range["lte"] = criteres["date_fin"]
+        if date_range:
+            filters.append({"range": {"date_soumission": date_range}})
+
+        # Bool final : must (pertinence) + filter (filtres non scorés)
+        body: Dict[str, Any] = {"must": must}
+        if filters:
+            body["filter"] = filters
+
+        return {"bool": body}
 
     def _traiter_reponse_recherche(self, response: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Traite la réponse d'Elasticsearch."""
