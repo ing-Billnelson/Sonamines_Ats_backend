@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
-from ..enums import CanalNotification, StatutCompte
+from ..enums import CanalNotification, Disponibilite, NiveauAcademique, Sexe, StatutCompte
 from ..value_objects import Email, NumeroTelephone
 from .utilisateur import Utilisateur
 
@@ -18,6 +18,18 @@ class Candidat(Utilisateur):
     linkedin_url: Optional[str] = None  # URL du profil LinkedIn (facultative)
     adresse: Optional[str] = None  # Adresse du candidat (facultative)
     competences: list[str] = field(default_factory=list)  # Compétences du candidat
+
+    # Champs du profil étendu pour la recherche multicritère
+    sexe: Optional[Sexe] = None
+    date_naissance: Optional[datetime] = None
+    nationalite: Optional[str] = None
+    region_origine: Optional[str] = None
+    region_residence: Optional[str] = None
+    langues_parlees: list[str] = field(default_factory=list)
+    disponibilite: Optional[Disponibilite] = None
+    niveau_academique: Optional[NiveauAcademique] = None
+    domaine_formation: Optional[str] = None
+    specialite: Optional[str] = None
 
     @classmethod
     def creer_nouveau(

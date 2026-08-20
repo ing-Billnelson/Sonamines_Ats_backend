@@ -48,6 +48,26 @@ class ModifierProfilCandidatUseCase:
             candidat.adresse = donnees.adresse
         if donnees.competences is not None:
             candidat.competences = donnees.competences
+        if donnees.sexe is not None:
+            candidat.sexe = donnees.sexe
+        if donnees.date_naissance is not None:
+            candidat.date_naissance = donnees.date_naissance
+        if donnees.nationalite is not None:
+            candidat.nationalite = donnees.nationalite
+        if donnees.region_origine is not None:
+            candidat.region_origine = donnees.region_origine
+        if donnees.region_residence is not None:
+            candidat.region_residence = donnees.region_residence
+        if donnees.langues_parlees is not None:
+            candidat.langues_parlees = donnees.langues_parlees
+        if donnees.disponibilite is not None:
+            candidat.disponibilite = donnees.disponibilite
+        if donnees.niveau_academique is not None:
+            candidat.niveau_academique = donnees.niveau_academique
+        if donnees.domaine_formation is not None:
+            candidat.domaine_formation = donnees.domaine_formation
+        if donnees.specialite is not None:
+            candidat.specialite = donnees.specialite
 
         candidat.date_modification = datetime.utcnow()
 

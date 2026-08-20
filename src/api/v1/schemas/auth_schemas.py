@@ -1,9 +1,17 @@
 """Schemas Pydantic pour l'authentification."""
 
-from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
 from typing import List, Optional
 
-from ....domain.enums import CanalNotification, StatutCompte
+from pydantic import BaseModel, EmailStr, Field
+
+from ....domain.enums import (
+    CanalNotification,
+    Disponibilite,
+    NiveauAcademique,
+    Sexe,
+    StatutCompte,
+)
 from .candidat_schemas import ExperienceResponse, FormationResponse
 
 
@@ -110,6 +118,16 @@ class UtilisateurResponse(BaseModel):
     linkedin_url: Optional[str] = None
     adresse: Optional[str] = None
     competences: Optional[List[str]] = None
+    sexe: Optional[Sexe] = None
+    date_naissance: Optional[datetime] = None
+    nationalite: Optional[str] = None
+    region_origine: Optional[str] = None
+    region_residence: Optional[str] = None
+    langues_parlees: Optional[List[str]] = None
+    disponibilite: Optional[Disponibilite] = None
+    niveau_academique: Optional[NiveauAcademique] = None
+    domaine_formation: Optional[str] = None
+    specialite: Optional[str] = None
     formations: List[FormationResponse] = []
     experiences: List[ExperienceResponse] = []
 

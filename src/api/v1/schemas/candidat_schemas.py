@@ -1,10 +1,17 @@
 """Schemas Pydantic pour les candidats."""
 
-from pydantic import BaseModel, Field
+from datetime import datetime
 from typing import Optional, List
 
+from pydantic import BaseModel, Field
+
 from ....domain.entities.document import TypeDocument
-from ....domain.enums import StatutCandidature
+from ....domain.enums import (
+    Disponibilite,
+    NiveauAcademique,
+    Sexe,
+    StatutCandidature,
+)
 
 
 class ModifierProfilRequest(BaseModel):
@@ -16,6 +23,16 @@ class ModifierProfilRequest(BaseModel):
     linkedin_url: Optional[str] = Field(None, description="URL du profil LinkedIn")
     adresse: Optional[str] = Field(None, description="Adresse du candidat")
     competences: Optional[List[str]] = Field(None, description="Compétences du candidat")
+    sexe: Optional[Sexe] = Field(None, description="Sexe du candidat")
+    date_naissance: Optional[datetime] = Field(None, description="Date de naissance du candidat")
+    nationalite: Optional[str] = Field(None, description="Nationalité du candidat")
+    region_origine: Optional[str] = Field(None, description="Région d'origine du candidat")
+    region_residence: Optional[str] = Field(None, description="Région de résidence du candidat")
+    langues_parlees: Optional[List[str]] = Field(None, description="Langues parlées par le candidat")
+    disponibilite: Optional[Disponibilite] = Field(None, description="Disponibilité du candidat")
+    niveau_academique: Optional[NiveauAcademique] = Field(None, description="Niveau académique du candidat")
+    domaine_formation: Optional[str] = Field(None, description="Domaine de formation du candidat")
+    specialite: Optional[str] = Field(None, description="Spécialité du candidat")
 
     class Config:
         json_schema_extra = {
@@ -25,7 +42,17 @@ class ModifierProfilRequest(BaseModel):
                 "telephone": "+221771234567",
                 "linkedin_url": "https://linkedin.com/in/amadou",
                 "adresse": "Dakar, Sénégal",
-                "competences": ["Python", "SQL"]
+                "competences": ["Python", "SQL"],
+                "sexe": "MASCULIN",
+                "date_naissance": "1990-05-12",
+                "nationalite": "Sénégalaise",
+                "region_origine": "Diourbel",
+                "region_residence": "Dakar",
+                "langues_parlees": ["Français", "Wolof"],
+                "disponibilite": "IMMEDIATE",
+                "niveau_academique": "MASTER",
+                "domaine_formation": "Informatique",
+                "specialite": "Développement Backend"
             }
         }
 
@@ -119,7 +146,7 @@ class AjouterExperienceRequest(BaseModel):
 class SoumettreKandidatureRequest(BaseModel):
     """Schema de requête pour soumettre une candidature."""
 
-    message_motivation: str = Field(..., min_length=50, description="Message de motivation (minimum 50 caractères)")
+    message_motivation: Optional[str] = Field(None, description="Message de motivation (optionnel)")
     offre_id: Optional[str] = Field(None, description="ID de l'offre (None pour candidature spontanée)")
 
     class Config:
@@ -183,7 +210,7 @@ class CandidatureResponse(BaseModel):
     offre_titre: Optional[str]
     offre_numero_reference: Optional[str]
     statut: StatutCandidature
-    message_motivation: str
+    message_motivation: Optional[str] = None
     notes_internes: Optional[str]
     date_soumission: str
     date_derniere_modification: str

@@ -74,6 +74,16 @@ def _convertir_en_response(utilisateur_dto: UtilisateurDTO) -> UtilisateurRespon
         linkedin_url=utilisateur_dto.linkedin_url,
         adresse=utilisateur_dto.adresse,
         competences=utilisateur_dto.competences,
+        sexe=utilisateur_dto.sexe,
+        date_naissance=utilisateur_dto.date_naissance,
+        nationalite=utilisateur_dto.nationalite,
+        region_origine=utilisateur_dto.region_origine,
+        region_residence=utilisateur_dto.region_residence,
+        langues_parlees=utilisateur_dto.langues_parlees,
+        disponibilite=utilisateur_dto.disponibilite,
+        niveau_academique=utilisateur_dto.niveau_academique,
+        domaine_formation=utilisateur_dto.domaine_formation,
+        specialite=utilisateur_dto.specialite,
         formations=[FormationResponse(**f.__dict__) for f in utilisateur_dto.formations],
         experiences=[ExperienceResponse(**e.__dict__) for e in utilisateur_dto.experiences],
     )
@@ -265,6 +275,16 @@ async def modifier_profil_candidat(
             linkedin_url=donnees.linkedin_url,
             adresse=donnees.adresse,
             competences=donnees.competences,
+            sexe=donnees.sexe,
+            date_naissance=donnees.date_naissance,
+            nationalite=donnees.nationalite,
+            region_origine=donnees.region_origine,
+            region_residence=donnees.region_residence,
+            langues_parlees=donnees.langues_parlees,
+            disponibilite=donnees.disponibilite,
+            niveau_academique=donnees.niveau_academique,
+            domaine_formation=donnees.domaine_formation,
+            specialite=donnees.specialite,
         )
         utilisateur_dto = await use_case.executer(dto)
         return _convertir_en_response(utilisateur_dto)

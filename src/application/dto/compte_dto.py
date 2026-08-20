@@ -1,9 +1,16 @@
 """DTOs pour la gestion des comptes utilisateur."""
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
 
-from ...domain.enums import CanalNotification, StatutCompte
+from ...domain.enums import (
+    CanalNotification,
+    Disponibilite,
+    NiveauAcademique,
+    Sexe,
+    StatutCompte,
+)
 
 
 @dataclass
@@ -79,6 +86,16 @@ class UtilisateurDTO:
     linkedin_url: Optional[str] = None  # Seulement pour les candidats
     adresse: Optional[str] = None  # Seulement pour les candidats
     competences: list[str] = field(default_factory=list)  # Seulement pour les candidats
+    sexe: Optional[Sexe] = None  # Seulement pour les candidats
+    date_naissance: Optional[datetime] = None  # Seulement pour les candidats
+    nationalite: Optional[str] = None  # Seulement pour les candidats
+    region_origine: Optional[str] = None  # Seulement pour les candidats
+    region_residence: Optional[str] = None  # Seulement pour les candidats
+    langues_parlees: list[str] = field(default_factory=list)  # Seulement pour les candidats
+    disponibilite: Optional[Disponibilite] = None  # Seulement pour les candidats
+    niveau_academique: Optional[NiveauAcademique] = None  # Seulement pour les candidats
+    domaine_formation: Optional[str] = None  # Seulement pour les candidats
+    specialite: Optional[str] = None  # Seulement pour les candidats
     formations: list["FormationDTO"] = field(default_factory=list)  # Seulement pour les candidats
     experiences: list["ExperienceDTO"] = field(default_factory=list)  # Seulement pour les candidats
 
@@ -104,6 +121,16 @@ class ModifierProfilDTO:
     linkedin_url: Optional[str] = None
     adresse: Optional[str] = None
     competences: Optional[list[str]] = None
+    sexe: Optional[Sexe] = None
+    date_naissance: Optional[datetime] = None
+    nationalite: Optional[str] = None
+    region_origine: Optional[str] = None
+    region_residence: Optional[str] = None
+    langues_parlees: Optional[list[str]] = None
+    disponibilite: Optional[Disponibilite] = None
+    niveau_academique: Optional[NiveauAcademique] = None
+    domaine_formation: Optional[str] = None
+    specialite: Optional[str] = None
 
 
 @dataclass

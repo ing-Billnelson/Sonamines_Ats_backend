@@ -53,6 +53,16 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
                 linkedin_url=model.linkedin_url,
                 adresse=model.adresse,
                 competences=model.competences,
+                sexe=model.sexe,
+                date_naissance=model.date_naissance,
+                nationalite=model.nationalite,
+                region_origine=model.region_origine,
+                region_residence=model.region_residence,
+                langues_parlees=model.langues_parlees,
+                disponibilite=model.disponibilite,
+                niveau_academique=model.niveau_academique,
+                domaine_formation=model.domaine_formation,
+                specialite=model.specialite,
             )
         elif model.type_utilisateur == "administrateur_rh":
             return AdministrateurRH(**kwargs)
@@ -90,6 +100,16 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
                 linkedin_url=candidat.linkedin_url,
                 adresse=candidat.adresse,
                 competences=candidat.competences,
+                sexe=candidat.sexe,
+                date_naissance=candidat.date_naissance,
+                nationalite=candidat.nationalite,
+                region_origine=candidat.region_origine,
+                region_residence=candidat.region_residence,
+                langues_parlees=candidat.langues_parlees,
+                disponibilite=candidat.disponibilite,
+                niveau_academique=candidat.niveau_academique,
+                domaine_formation=candidat.domaine_formation,
+                specialite=candidat.specialite,
             )
             self._session.add(model)
         else:
@@ -113,6 +133,16 @@ class PostgresUtilisateurRepository(UtilisateurRepository):
             model.linkedin_url = candidat.linkedin_url
             model.adresse = candidat.adresse
             model.competences = candidat.competences
+            model.sexe = candidat.sexe
+            model.date_naissance = candidat.date_naissance
+            model.nationalite = candidat.nationalite
+            model.region_origine = candidat.region_origine
+            model.region_residence = candidat.region_residence
+            model.langues_parlees = candidat.langues_parlees
+            model.disponibilite = candidat.disponibilite
+            model.niveau_academique = candidat.niveau_academique
+            model.domaine_formation = candidat.domaine_formation
+            model.specialite = candidat.specialite
 
         await self._session.flush()
         return self._model_vers_entite(model)

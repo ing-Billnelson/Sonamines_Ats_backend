@@ -7,7 +7,13 @@ from sqlalchemy import Column, DateTime, String, Boolean, ARRAY, Enum as SQLAEnu
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.declarative import declarative_base
 
-from ....domain.enums import CanalNotification, StatutCompte
+from ....domain.enums import (
+    CanalNotification,
+    Disponibilite,
+    NiveauAcademique,
+    Sexe,
+    StatutCompte,
+)
 
 Base = declarative_base()
 
@@ -68,6 +74,18 @@ class CandidatModel(UtilisateurModel):
     linkedin_url = Column(String(500), nullable=True)
     adresse = Column(String(500), nullable=True)
     competences = Column(ARRAY(String), nullable=True)
+
+    # Profil étendu pour la recherche multicritère
+    sexe = Column(SQLAEnum(Sexe), nullable=True)
+    date_naissance = Column(DateTime, nullable=True)
+    nationalite = Column(String(100), nullable=True)
+    region_origine = Column(String(100), nullable=True)
+    region_residence = Column(String(100), nullable=True)
+    langues_parlees = Column(ARRAY(String), nullable=True)
+    disponibilite = Column(SQLAEnum(Disponibilite), nullable=True)
+    niveau_academique = Column(SQLAEnum(NiveauAcademique), nullable=True)
+    domaine_formation = Column(String(255), nullable=True)
+    specialite = Column(String(255), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "candidat",
