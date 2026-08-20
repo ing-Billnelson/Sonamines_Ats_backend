@@ -30,10 +30,14 @@ from ...application.use_cases import (
     AjouterExperienceUseCase,
     SupprimerExperienceUseCase,
     ListerMesOffresUseCase,
+    ListerMesCandidaturesUseCase,
+    ListerCandidaturesRHUseCase,
+    ChangerStatutCandidatureUseCase,
     CreerOffreUseCase,
     PublierOffreUseCase,
     CloturerOffreUseCase,
     RechercherOffresUseCase,
+    RechercherCandidaturesUseCase,
 )
 from ...application.dto import UtilisateurDTO
 from ...domain.entities import AdministrateurRH, SuperAdministrateur
@@ -320,12 +324,14 @@ def get_soumettre_candidature_spontanee_use_case(
     candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
     utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
     notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+    search_port: ElasticsearchAdapter = Depends(get_search_adapter),
 ) -> SoumettreCandidatureSpontaneeUseCase:
     """Factory pour le use case de candidature spontanée."""
     return SoumettreCandidatureSpontaneeUseCase(
         candidature_repository=candidature_repository,
         utilisateur_repository=utilisateur_repository,
         notifier_utilisateur=notifier_utilisateur,
+        search_port=search_port,
     )
 
 
@@ -334,6 +340,7 @@ def get_postuler_offre_use_case(
     offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
     utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
     notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+    search_port: ElasticsearchAdapter = Depends(get_search_adapter),
 ) -> PostulerOffreUseCase:
     """Factory pour le use case de candidature à une offre."""
     return PostulerOffreUseCase(
@@ -341,6 +348,7 @@ def get_postuler_offre_use_case(
         offre_repository=offre_repository,
         utilisateur_repository=utilisateur_repository,
         notifier_utilisateur=notifier_utilisateur,
+        search_port=search_port,
     )
 
 
@@ -394,6 +402,49 @@ def get_lister_mes_offres_use_case(
     )
 
 
+def get_lister_mes_candidatures_use_case(
+    candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+) -> ListerMesCandidaturesUseCase:
+    """Factory pour le use case de listage des candidatures d'un candidat."""
+    return ListerMesCandidaturesUseCase(
+        candidature_repository=candidature_repository,
+        utilisateur_repository=utilisateur_repository,
+        offre_repository=offre_repository,
+    )
+
+
+def get_lister_candidatures_rh_use_case(
+    candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+) -> ListerCandidaturesRHUseCase:
+    """Factory pour le use case de listage de toutes les candidatures (RH)."""
+    return ListerCandidaturesRHUseCase(
+        candidature_repository=candidature_repository,
+        utilisateur_repository=utilisateur_repository,
+        offre_repository=offre_repository,
+    )
+
+
+def get_changer_statut_candidature_use_case(
+    candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
+    notifier_utilisateur: NotifierUtilisateurUseCase = Depends(get_notifier_utilisateur_use_case),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+    search_port: ElasticsearchAdapter = Depends(get_search_adapter),
+) -> ChangerStatutCandidatureUseCase:
+    """Factory pour le use case de changement de statut d'une candidature."""
+    return ChangerStatutCandidatureUseCase(
+        candidature_repository=candidature_repository,
+        notifier_utilisateur=notifier_utilisateur,
+        utilisateur_repository=utilisateur_repository,
+        offre_repository=offre_repository,
+        search_port=search_port,
+    )
+
+
 def get_rechercher_offres_use_case(
     search_port: ElasticsearchAdapter = Depends(get_search_adapter),
     offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
@@ -402,6 +453,15 @@ def get_rechercher_offres_use_case(
     return RechercherOffresUseCase(
         search_port=search_port,
         offre_repository=offre_repository,
+    )
+
+
+def get_rechercher_candidatures_use_case(
+    search_port: ElasticsearchAdapter = Depends(get_search_adapter),
+) -> RechercherCandidaturesUseCase:
+    """Factory pour le use case de recherche de candidatures."""
+    return RechercherCandidaturesUseCase(
+        search_port=search_port,
     )
 
 

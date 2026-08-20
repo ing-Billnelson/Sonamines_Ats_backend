@@ -7,6 +7,7 @@ from uuid import UUID
 from ....application.use_cases import (
     SoumettreCandidatureSpontaneeUseCase,
     PostulerOffreUseCase,
+    ListerMesCandidaturesUseCase,
     TeleverserDocumentUseCase,
     TeleverserPhotoProfilUseCase,
     SupprimerPhotoProfilUseCase,
@@ -15,6 +16,7 @@ from ....application.dto import (
     SoumettreKandidatureDTO,
     TeleverserDocumentDTO,
     UtilisateurDTO,
+    CandidatureDTO,
 )
 from ....domain.entities.document import TypeDocument
 from ....domain.enums import CategorieFichier
@@ -39,6 +41,7 @@ from ..dependencies import (
     get_utilisateur_courant,
     get_soumettre_candidature_spontanee_use_case,
     get_postuler_offre_use_case,
+    get_lister_mes_candidatures_use_case,
     get_televerser_document_use_case,
     get_televerser_photo_profil_use_case,
     get_supprimer_photo_profil_use_case,
@@ -181,13 +184,12 @@ async def postuler_offre(
 )
 async def lister_mes_candidatures(
     utilisateur_courant = Depends(get_utilisateur_courant),
+    use_case: ListerMesCandidaturesUseCase = Depends(get_lister_mes_candidatures_use_case),
 ):
     """Liste les candidatures du candidat connecté."""
-    # TODO: Implémenter le listage des candidatures
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Endpoint en cours d'implémentation"},
-    )
+    candidatures_dto = await use_case.executer(candidat_id=utilisateur_courant.id)
+
+    return [_convertir_candidature_dto(dto) for dto in candidatures_dto]
 
 
 @router.post(
@@ -388,6 +390,27 @@ async def supprimer_document_candidature(
     return SuccessResponse(
         success=True,
         message="Document supprimé avec succès",
+    )
+
+
+def _convertir_candidature_dto(dto: CandidatureDTO) -> CandidatureResponse:
+    """Convertit un CandidatureDTO en CandidatureResponse."""
+    return CandidatureResponse(
+        id=dto.id,
+        numero_reference=dto.numero_reference,
+        candidat_nom_complet=dto.candidat_nom_complet,
+        candidat_email=dto.candidat_email,
+        offre_titre=dto.offre_titre,
+        offre_numero_reference=dto.offre_numero_reference,
+        statut=dto.statut,
+        message_motivation=dto.message_motivation,
+        notes_internes=dto.notes_internes,
+        date_soumission=dto.date_soumission,
+        date_derniere_modification=dto.date_derniere_modification,
+        documents=dto.documents,
+        historique=dto.historique,
+        est_spontanee=dto.est_spontanee,
+        est_complete=dto.est_complete,
     )
 
 

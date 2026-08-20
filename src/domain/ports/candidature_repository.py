@@ -5,6 +5,7 @@ from typing import Optional
 from uuid import UUID
 
 from ..entities import Candidature, Document, HistoriqueStatut
+from ..enums import StatutCandidature
 from ..value_objects import NumeroReference
 
 
@@ -41,6 +42,22 @@ class CandidatureRepository(ABC):
     @abstractmethod
     async def lister_candidatures_spontanees(self) -> list[Candidature]:
         """Liste toutes les candidatures spontanées."""
+        pass
+
+    @abstractmethod
+    async def lister_toutes(
+        self,
+        statut: Optional[StatutCandidature] = None,
+        offre_id: Optional[UUID] = None,
+        spontanee: Optional[bool] = None,
+        page: int = 1,
+        taille_page: int = 20,
+    ) -> tuple[list[Candidature], int]:
+        """Liste les candidatures avec filtres optionnels et pagination.
+
+        Retourne un tuple (liste des candidatures de la page, nombre total
+        de candidatures correspondant aux filtres).
+        """
         pass
 
     @abstractmethod

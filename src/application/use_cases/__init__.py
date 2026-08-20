@@ -9,8 +9,10 @@ from .creer_compte_administrateur_rh import CreerCompteAdministrateurRHUseCase
 from .creer_compte_candidat import CreerCompteCandidatUseCase
 from .creer_offre import CreerOffreUseCase
 from .demander_reinitialisation_mot_de_passe import DemanderReinitialisationMotDePasseUseCase
-from .lister_notifications import ListerNotificationsUseCase
+from .lister_candidatures_rh import ListerCandidaturesRHUseCase
+from .lister_mes_candidatures import ListerMesCandidaturesUseCase
 from .lister_mes_offres import ListerMesOffresUseCase
+from .lister_notifications import ListerNotificationsUseCase
 from .marquer_notification_lue import MarquerNotificationLueUseCase
 from .modifier_canal_notification import ModifierCanalNotificationUseCase
 from .modifier_profil_candidat import ModifierProfilCandidatUseCase
@@ -53,6 +55,8 @@ __all__ = [
     # Candidatures
     "SoumettreCandidatureSpontaneeUseCase",
     "PostulerOffreUseCase",
+    "ListerMesCandidaturesUseCase",
+    "ListerCandidaturesRHUseCase",
     "ChangerStatutCandidatureUseCase",
     "PreselectionnerCandidatUseCase",
     # Offres
