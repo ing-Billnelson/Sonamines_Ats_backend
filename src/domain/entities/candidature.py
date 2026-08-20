@@ -18,9 +18,9 @@ class Candidature:
     candidat_id: UUID
     offre_id: Optional[UUID]  # None pour candidature spontanée
     statut: StatutCandidature
-    message_motivation: str
     date_soumission: datetime
     date_derniere_modification: datetime
+    message_motivation: Optional[str] = None
     notes_internes: Optional[str] = None  # Notes ajoutées par les RH
     documents: list["Document"] = field(default_factory=list)
 
@@ -28,7 +28,7 @@ class Candidature:
     def creer_nouvelle(
         cls,
         candidat_id: UUID,
-        message_motivation: str,
+        message_motivation: Optional[str] = None,
         offre_id: Optional[UUID] = None,
     ) -> "Candidature":
         """Crée une nouvelle candidature."""

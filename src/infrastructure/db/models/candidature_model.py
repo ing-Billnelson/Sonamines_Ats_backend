@@ -25,7 +25,7 @@ class CandidatureModel(Base):
     
     # Statut et contenu
     statut = Column(SQLAEnum(StatutCandidature), nullable=False, default=StatutCandidature.RECUE)
-    message_motivation = Column(Text, nullable=False)
+    message_motivation = Column(Text, nullable=True)  # Optionnel
     notes_internes = Column(Text, nullable=True)  # Notes des RH
     
     # Dates

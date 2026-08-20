@@ -15,6 +15,7 @@ from ...domain.exceptions import (
 from ...domain.ports import (
     CandidatureRepository,
     OffreRepository,
+    SearchPort,
     UtilisateurRepository,
 )
 from ..dto import CandidatureDTO, SoumettreKandidatureDTO
@@ -30,11 +31,13 @@ class PostulerOffreUseCase:
         offre_repository: OffreRepository,
         utilisateur_repository: UtilisateurRepository,
         notifier_utilisateur: NotifierUtilisateurUseCase,
+        search_port: SearchPort,
     ):
         self._candidature_repository = candidature_repository
         self._offre_repository = offre_repository
         self._utilisateur_repository = utilisateur_repository
         self._notifier_utilisateur = notifier_utilisateur
+        self._search_port = search_port
 
     async def executer(self, donnees: SoumettreKandidatureDTO) -> CandidatureDTO:
         """Crée une candidature pour une offre et retourne ses informations."""
@@ -47,8 +50,13 @@ class PostulerOffreUseCase:
             raise OffreIntrouvableError(str(offre_id))
 
         # Vérifier que l'offre peut recevoir des candidatures
-        if not offre.peut_recevoir_candidatures():
+        if not offre.statut.is_active:
             raise OffreClotureeError()
+
+        if offre.est_expiree():
+            raise OffreClotureeError(
+                "La date limite de candidature pour cette offre est dépassée"
+            )
 
         # Récupérer le candidat
         candidat = await self._utilisateur_repository.obtenir_candidat_par_id(
@@ -72,6 +80,11 @@ class PostulerOffreUseCase:
             )
         except IntegrityError:
             raise CandidatureDejaExistanteError()
+
+        # Indexer la candidature dans Elasticsearch (avec info candidat et offre)
+        await self._search_port.indexer_candidature(
+            candidature_sauvegarde, candidat=candidat, offre=offre
+        )
 
         # Créer l'historique initial
         historique = HistoriqueStatut.creer_nouveau(

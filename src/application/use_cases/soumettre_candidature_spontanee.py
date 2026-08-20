@@ -5,7 +5,11 @@ from uuid import UUID
 from ...domain.entities import Candidature, HistoriqueStatut
 from ...domain.enums import StatutCandidature, TypeEvenement
 from ...domain.exceptions import UtilisateurIntrouvableError
-from ...domain.ports import CandidatureRepository, UtilisateurRepository
+from ...domain.ports import (
+    CandidatureRepository,
+    SearchPort,
+    UtilisateurRepository,
+)
 from ..dto import CandidatureDTO, SoumettreKandidatureDTO
 from .notifier_utilisateur import NotifierUtilisateurUseCase
 
@@ -18,10 +22,12 @@ class SoumettreCandidatureSpontaneeUseCase:
         candidature_repository: CandidatureRepository,
         utilisateur_repository: UtilisateurRepository,
         notifier_utilisateur: NotifierUtilisateurUseCase,
+        search_port: SearchPort,
     ):
         self._candidature_repository = candidature_repository
         self._utilisateur_repository = utilisateur_repository
         self._notifier_utilisateur = notifier_utilisateur
+        self._search_port = search_port
 
     async def executer(self, donnees: SoumettreKandidatureDTO) -> CandidatureDTO:
         """
@@ -62,6 +68,11 @@ class SoumettreCandidatureSpontaneeUseCase:
         # Sauvegarder la candidature
         candidature_sauvegarde = await self._candidature_repository.sauvegarder(
             candidature
+        )
+
+        # Indexer la candidature dans Elasticsearch (info candidat, sans offre)
+        await self._search_port.indexer_candidature(
+            candidature_sauvegarde, candidat=candidat
         )
 
         # Créer l'historique initial

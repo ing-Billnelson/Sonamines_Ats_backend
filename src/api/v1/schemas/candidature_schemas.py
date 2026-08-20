@@ -3,7 +3,13 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
-from ....domain.enums import StatutCandidature
+from ....domain.enums import (
+    Disponibilite,
+    NiveauAcademique,
+    Sexe,
+    StatutCandidature,
+    TypeOffre,
+)
 from .candidat_schemas import CandidatureResponse
 
 
@@ -36,7 +42,7 @@ class AjouterNotesRequest(BaseModel):
 
 
 class RechercherCandidaturesRequest(BaseModel):
-    """Schema de requête pour la recherche de candidatures."""
+    """Schema de requête pour la recherche multicritère de candidatures."""
 
     texte: Optional[str] = Field(None, description="Recherche textuelle libre")
     statut: Optional[StatutCandidature] = Field(None, description="Filtrer par statut")
@@ -45,16 +51,33 @@ class RechercherCandidaturesRequest(BaseModel):
     date_debut: Optional[str] = Field(None, description="Date de début (ISO format)")
     date_fin: Optional[str] = Field(None, description="Date de fin (ISO format)")
     spontanee: Optional[bool] = Field(None, description="Filtrer les candidatures spontanées")
+    # Critères du profil candidat
+    sexe: Optional[Sexe] = Field(None, description="Filtrer par sexe du candidat")
+    age_min: Optional[int] = Field(None, ge=14, le=100, description="Âge minimum (calculé depuis la date de naissance)")
+    age_max: Optional[int] = Field(None, ge=14, le=100, description="Âge maximum (calculé depuis la date de naissance)")
+    diplome: Optional[str] = Field(None, description="Diplôme (mappé sur le niveau académique)")
+    domaine_formation: Optional[str] = Field(None, description="Domaine de formation")
+    niveau_academique: Optional[NiveauAcademique] = Field(None, description="Niveau académique")
+    specialite: Optional[str] = Field(None, description="Spécialité")
+    competences: Optional[List[str]] = Field(None, description="Compétences requises")
+    region_origine: Optional[str] = Field(None, description="Région d'origine")
+    region_residence: Optional[str] = Field(None, description="Région de résidence")
+    langues_parlees: Optional[List[str]] = Field(None, description="Langues parlées")
+    disponibilite: Optional[Disponibilite] = Field(None, description="Disponibilité")
+    type_offre: Optional[TypeOffre] = Field(None, description="Type d'offre (EMPLOI/STAGE)")
+    # Pagination
     page: int = Field(1, ge=1, description="Numéro de page")
     taille_page: int = Field(20, ge=1, le=100, description="Nombre d'éléments par page")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "statut": "RECUE",
-                "offre_id": "123e4567-e89b-12d3-a456-426614174000",
-                "date_debut": "2024-01-01T00:00:00Z",
-                "date_fin": "2024-01-31T23:59:59Z",
+                "texte": "développeur",
+                "sexe": "MASCULIN",
+                "niveau_academique": "MASTER",
+                "region_residence": "Dakar",
+                "disponibilite": "IMMEDIATE",
+                "type_offre": "EMPLOI",
                 "page": 1,
                 "taille_page": 20
             }
