@@ -239,8 +239,28 @@ class PostgresCandidatureRepository(CandidatureRepository):
         self, candidature_id: UUID
     ) -> list[HistoriqueStatut]:
         """Récupère l'historique des statuts d'une candidature."""
-        # TODO: Implémenter la récupération et conversion
-        return []
+        query = (
+            select(HistoriqueStatutModel)
+            .where(HistoriqueStatutModel.candidature_id == candidature_id)
+            .order_by(HistoriqueStatutModel.date_changement)
+        )
+        result = await self._session.execute(query)
+        models = result.scalars().all()
+        return [self._model_vers_entite_historique(model) for model in models]
+
+    def _model_vers_entite_historique(
+        self, model: HistoriqueStatutModel
+    ) -> HistoriqueStatut:
+        """Convertit un modèle SQLAlchemy historique en entité domaine."""
+        return HistoriqueStatut(
+            id=model.id,
+            candidature_id=model.candidature_id,
+            ancien_statut=model.ancien_statut,
+            nouveau_statut=model.nouveau_statut,
+            commentaire=model.commentaire,
+            utilisateur_id=model.utilisateur_id,
+            date_changement=model.date_changement,
+        )
 
     async def supprimer(self, candidature_id: UUID) -> bool:
         """Supprime une candidature du système."""

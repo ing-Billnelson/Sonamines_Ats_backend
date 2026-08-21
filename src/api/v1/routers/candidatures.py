@@ -7,6 +7,8 @@ from ....application.use_cases import (
     ListerCandidaturesRHUseCase,
     ChangerStatutCandidatureUseCase,
     RechercherCandidaturesUseCase,
+    ObtenirCandidatureRHUseCase,
+    AjouterNotesInternesUseCase,
 )
 from ....application.dto import UtilisateurDTO, RechercherCandidaturesDTO
 from ....domain.enums import StatutCandidature
@@ -27,6 +29,8 @@ from ..dependencies import (
     get_lister_candidatures_rh_use_case,
     get_changer_statut_candidature_use_case,
     get_rechercher_candidatures_use_case,
+    get_obtenir_candidature_rh_use_case,
+    get_ajouter_notes_internes_use_case,
 )
 
 router = APIRouter(prefix="/candidatures", tags=["Gestion des candidatures (RH)"])
@@ -170,13 +174,33 @@ async def rechercher_candidatures_rh(
 async def obtenir_candidature_rh(
     candidature_id: str,
     utilisateur_courant = Depends(get_admin_rh_courant),
+    use_case: ObtenirCandidatureRHUseCase = Depends(get_obtenir_candidature_rh_use_case),
 ):
-    """Récupère une candidature (accès RH)."""
-    # TODO: Vérifier les droits RH
-    # TODO: Implémenter la récupération de candidature
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Endpoint en cours d'implémentation"},
+    """Récupère une candidature complète (accès RH)."""
+    try:
+        candidature_dto = await use_case.executer(candidature_id=candidature_id)
+    except CandidatureIntrouvableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "CandidatureIntrouvable", "message": str(e)},
+        )
+
+    return CandidatureResponse(
+        id=candidature_dto.id,
+        numero_reference=candidature_dto.numero_reference,
+        candidat_nom_complet=candidature_dto.candidat_nom_complet,
+        candidat_email=candidature_dto.candidat_email,
+        offre_titre=candidature_dto.offre_titre,
+        offre_numero_reference=candidature_dto.offre_numero_reference,
+        statut=candidature_dto.statut,
+        message_motivation=candidature_dto.message_motivation,
+        notes_internes=candidature_dto.notes_internes,
+        date_soumission=candidature_dto.date_soumission,
+        date_derniere_modification=candidature_dto.date_derniere_modification,
+        documents=candidature_dto.documents,
+        historique=candidature_dto.historique,
+        est_spontanee=candidature_dto.est_spontanee,
+        est_complete=candidature_dto.est_complete,
     )
 
 
@@ -245,11 +269,34 @@ async def ajouter_notes_internes(
     candidature_id: str,
     donnees: AjouterNotesRequest,
     utilisateur_courant = Depends(get_admin_rh_courant),
+    use_case: AjouterNotesInternesUseCase = Depends(get_ajouter_notes_internes_use_case),
 ):
-    """Ajoute des notes internes à une candidature."""
-    # TODO: Vérifier les droits RH
-    # TODO: Implémenter l'ajout de notes
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail={"error": "NotImplemented", "message": "Endpoint en cours d'implémentation"},
+    """Ajoute des notes internes à une candidature (accès RH)."""
+    try:
+        candidature_dto = await use_case.executer(
+            candidature_id=candidature_id,
+            notes=donnees.notes,
+        )
+    except CandidatureIntrouvableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "CandidatureIntrouvable", "message": str(e)},
+        )
+
+    return CandidatureResponse(
+        id=candidature_dto.id,
+        numero_reference=candidature_dto.numero_reference,
+        candidat_nom_complet=candidature_dto.candidat_nom_complet,
+        candidat_email=candidature_dto.candidat_email,
+        offre_titre=candidature_dto.offre_titre,
+        offre_numero_reference=candidature_dto.offre_numero_reference,
+        statut=candidature_dto.statut,
+        message_motivation=candidature_dto.message_motivation,
+        notes_internes=candidature_dto.notes_internes,
+        date_soumission=candidature_dto.date_soumission,
+        date_derniere_modification=candidature_dto.date_derniere_modification,
+        documents=candidature_dto.documents,
+        historique=candidature_dto.historique,
+        est_spontanee=candidature_dto.est_spontanee,
+        est_complete=candidature_dto.est_complete,
     )

@@ -2,6 +2,7 @@
 
 from .ajouter_experience import AjouterExperienceUseCase
 from .ajouter_formation import AjouterFormationUseCase
+from .ajouter_notes_internes import AjouterNotesInternesUseCase
 from .authentifier import AuthentifierUseCase
 from .changer_statut_candidature import ChangerStatutCandidatureUseCase
 from .cloturer_offre import CloturerOffreUseCase
@@ -17,6 +18,7 @@ from .marquer_notification_lue import MarquerNotificationLueUseCase
 from .modifier_canal_notification import ModifierCanalNotificationUseCase
 from .modifier_profil_candidat import ModifierProfilCandidatUseCase
 from .notifier_utilisateur import NotifierUtilisateurUseCase
+from .obtenir_candidature_rh import ObtenirCandidatureRHUseCase
 from .obtenir_profil_candidat import ObtenirProfilCandidatUseCase
 from .postuler_offre import PostulerOffreUseCase
 from .preselectionner_candidat import PreselectionnerCandidatUseCase
@@ -58,6 +60,8 @@ __all__ = [
     "ListerMesCandidaturesUseCase",
     "ListerCandidaturesRHUseCase",
     "ChangerStatutCandidatureUseCase",
+    "ObtenirCandidatureRHUseCase",
+    "AjouterNotesInternesUseCase",
     "PreselectionnerCandidatUseCase",
     # Offres
     "ListerMesOffresUseCase",

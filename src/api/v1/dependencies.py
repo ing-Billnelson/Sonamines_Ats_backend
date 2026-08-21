@@ -33,6 +33,8 @@ from ...application.use_cases import (
     ListerMesCandidaturesUseCase,
     ListerCandidaturesRHUseCase,
     ChangerStatutCandidatureUseCase,
+    ObtenirCandidatureRHUseCase,
+    AjouterNotesInternesUseCase,
     CreerOffreUseCase,
     PublierOffreUseCase,
     CloturerOffreUseCase,
@@ -442,6 +444,34 @@ def get_changer_statut_candidature_use_case(
         utilisateur_repository=utilisateur_repository,
         offre_repository=offre_repository,
         search_port=search_port,
+    )
+
+
+def get_obtenir_candidature_rh_use_case(
+    candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+    storage_port: MinioAdapter = Depends(get_storage_adapter),
+) -> ObtenirCandidatureRHUseCase:
+    """Factory pour le use case de récupération complète d'une candidature (RH)."""
+    return ObtenirCandidatureRHUseCase(
+        candidature_repository=candidature_repository,
+        utilisateur_repository=utilisateur_repository,
+        offre_repository=offre_repository,
+        storage_port=storage_port,
+    )
+
+
+def get_ajouter_notes_internes_use_case(
+    candidature_repository: PostgresCandidatureRepository = Depends(get_candidature_repository),
+    utilisateur_repository: PostgresUtilisateurRepository = Depends(get_utilisateur_repository),
+    offre_repository: PostgresOffreRepository = Depends(get_offre_repository),
+) -> AjouterNotesInternesUseCase:
+    """Factory pour le use case d'ajout de notes internes à une candidature."""
+    return AjouterNotesInternesUseCase(
+        candidature_repository=candidature_repository,
+        utilisateur_repository=utilisateur_repository,
+        offre_repository=offre_repository,
     )
 
 

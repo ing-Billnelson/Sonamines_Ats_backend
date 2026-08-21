@@ -1,6 +1,6 @@
 """Use case pour la modification du profil candidat."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from ...domain.exceptions import UtilisateurIntrouvableError
@@ -51,7 +51,13 @@ class ModifierProfilCandidatUseCase:
         if donnees.sexe is not None:
             candidat.sexe = donnees.sexe
         if donnees.date_naissance is not None:
-            candidat.date_naissance = donnees.date_naissance
+            dt = donnees.date_naissance
+            # Normaliser en UTC puis retirer le fuseau pour rester cohérent
+            # avec les datetime naïfs (datetime.utcnow()) du reste du système,
+            # requis par la colonne TIMESTAMP WITHOUT TIME ZONE.
+            if dt.tzinfo is not None:
+                dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+            candidat.date_naissance = dt
         if donnees.nationalite is not None:
             candidat.nationalite = donnees.nationalite
         if donnees.region_origine is not None:
