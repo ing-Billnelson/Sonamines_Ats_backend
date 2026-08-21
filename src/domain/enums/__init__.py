@@ -3,7 +3,7 @@
 from .canal_notification import CanalNotification
 from .categorie_fichier import CategorieFichier
 from .disponibilite import Disponibilite
-from .niveau_academique import NiveauAcademique
+from .niveau_academique import NiveauAcademique, ordre_niveau_academique
 from .sexe import Sexe
 from .statut_candidature import StatutCandidature
 from .statut_compte import StatutCompte
@@ -24,4 +24,5 @@ __all__ = [
     "TypeEvenement",
     "TypeOffre",
     "TypeStage",
+    "ordre_niveau_academique",
 ]

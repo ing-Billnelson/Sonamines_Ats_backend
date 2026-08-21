@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from ...domain.entities import Candidature, HistoriqueStatut
 from ...domain.enums import StatutCandidature, TypeEvenement
 from ...domain.exceptions import (
+    CandidatNonEligibleError,
     CandidatureDejaExistanteError,
     OffreClotureeError,
     OffreIntrouvableError,
@@ -65,12 +66,23 @@ class PostulerOffreUseCase:
         if not candidat:
             raise UtilisateurIntrouvableError(str(candidat_id))
 
+        # Vérifier l'éligibilité du candidat aux critères de l'offre
+        eligible, criteres_manquants = offre.verifier_eligibilite(candidat)
+        if not eligible:
+            raise CandidatNonEligibleError(criteres_manquants)
+
+        # Calculer le score d'éligibilité (0-100) si le contrôle est activé
+        score_eligibilite = None
+        if offre.eligibilite_activee:
+            score_eligibilite = offre.calculer_score_eligibilite(candidat)
+
         # Créer la candidature (avec offre_id renseigné)
         candidature = Candidature.creer_nouvelle(
             candidat_id=candidat_id,
             message_motivation=donnees.message_motivation,
             offre_id=offre_id,
         )
+        candidature.score_eligibilite = score_eligibilite
 
         # Sauvegarder la candidature ; la contrainte unique (candidat_id, offre_id)
         # en base convertit une violation en exception domaine claire.

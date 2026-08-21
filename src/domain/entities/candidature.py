@@ -22,6 +22,7 @@ class Candidature:
     date_derniere_modification: datetime
     message_motivation: Optional[str] = None
     notes_internes: Optional[str] = None  # Notes ajoutées par les RH
+    score_eligibilite: Optional[float] = None  # Score d'éligibilité (0-100)
     documents: list["Document"] = field(default_factory=list)
 
     @classmethod

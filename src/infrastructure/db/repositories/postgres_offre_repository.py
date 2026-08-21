@@ -40,6 +40,10 @@ class PostgresOffreRepository(OffreRepository):
             date_publication=model.date_publication,
             date_cloture=model.date_cloture,
             date_modification=model.date_modification,
+            eligibilite_activee=model.eligibilite_activee,
+            niveau_academique_minimum=model.niveau_academique_minimum,
+            langues_requises=model.langues_requises,
+            disponibilite_requise=model.disponibilite_requise,
         )
 
     async def sauvegarder(self, offre: Offre) -> Offre:
@@ -69,6 +73,10 @@ class PostgresOffreRepository(OffreRepository):
                 date_publication=offre.date_publication,
                 date_cloture=offre.date_cloture,
                 date_modification=offre.date_modification,
+                eligibilite_activee=offre.eligibilite_activee,
+                niveau_academique_minimum=offre.niveau_academique_minimum,
+                langues_requises=offre.langues_requises,
+                disponibilite_requise=offre.disponibilite_requise,
             )
             self._session.add(model)
         else:
@@ -90,6 +98,10 @@ class PostgresOffreRepository(OffreRepository):
             model.date_publication = offre.date_publication
             model.date_cloture = offre.date_cloture
             model.date_modification = offre.date_modification
+            model.eligibilite_activee = offre.eligibilite_activee
+            model.niveau_academique_minimum = offre.niveau_academique_minimum
+            model.langues_requises = offre.langues_requises
+            model.disponibilite_requise = offre.disponibilite_requise
 
         await self._session.flush()
         return self._model_vers_entite(model)

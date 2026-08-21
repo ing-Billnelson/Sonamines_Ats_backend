@@ -15,6 +15,16 @@ class CandidatureNonEligibleError(DomainException):
         self.message = message
 
 
+class CandidatNonEligibleError(DomainException):
+    """Erreur levée quand un candidat ne satisfait pas les critères d'éligibilité d'une offre."""
+
+    def __init__(self, details: list[str]):
+        message = "Cette candidature n'est pas éligible à l'offre : " + "; ".join(details)
+        super().__init__(message)
+        self.details = details
+        self.message = message
+
+
 class OffreClotureeError(DomainException):
     """Erreur levée quand on tente d'interagir avec une offre clôturée."""
 

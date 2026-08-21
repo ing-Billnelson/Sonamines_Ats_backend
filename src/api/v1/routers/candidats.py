@@ -21,6 +21,7 @@ from ....application.dto import (
 from ....domain.entities.document import TypeDocument
 from ....domain.enums import CategorieFichier
 from ....domain.exceptions import (
+    CandidatNonEligibleError,
     UtilisateurIntrouvableError,
     OffreClotureeError,
     OffreIntrouvableError,
@@ -173,6 +174,15 @@ async def postuler_offre(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={"error": "CandidatureDejaExistante", "message": str(e)},
+        )
+    except CandidatNonEligibleError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error": "CandidatNonEligible",
+                "message": str(e),
+                "details": e.details,
+            },
         )
 
 

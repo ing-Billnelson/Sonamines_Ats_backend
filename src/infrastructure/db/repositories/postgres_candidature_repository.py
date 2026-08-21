@@ -31,6 +31,7 @@ class PostgresCandidatureRepository(CandidatureRepository):
             date_soumission=model.date_soumission,
             date_derniere_modification=model.date_derniere_modification,
             notes_internes=model.notes_internes,
+            score_eligibilite=model.score_eligibilite,
             documents=[],
         )
 
@@ -51,6 +52,7 @@ class PostgresCandidatureRepository(CandidatureRepository):
                 date_soumission=candidature.date_soumission,
                 date_derniere_modification=candidature.date_derniere_modification,
                 notes_internes=candidature.notes_internes,
+                score_eligibilite=candidature.score_eligibilite,
             )
             self._session.add(model)
         else:
@@ -62,6 +64,7 @@ class PostgresCandidatureRepository(CandidatureRepository):
             model.date_soumission = candidature.date_soumission
             model.date_derniere_modification = candidature.date_derniere_modification
             model.notes_internes = candidature.notes_internes
+            model.score_eligibilite = candidature.score_eligibilite
 
         await self._session.flush()
         return self._model_vers_entite(model)

@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, String, Text, ForeignKey, Enum as SQLAEnum
+from sqlalchemy import Column, DateTime, String, Text, Float, ForeignKey, Enum as SQLAEnum
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
 
@@ -27,6 +27,7 @@ class CandidatureModel(Base):
     statut = Column(SQLAEnum(StatutCandidature), nullable=False, default=StatutCandidature.RECUE)
     message_motivation = Column(Text, nullable=True)  # Optionnel
     notes_internes = Column(Text, nullable=True)  # Notes des RH
+    score_eligibilite = Column(Float, nullable=True)  # Score d'éligibilité (0-100)
     
     # Dates
     date_soumission = Column(DateTime, nullable=False, default=datetime.utcnow)
