@@ -33,7 +33,7 @@ class PostgresOffreRepository(OffreRepository):
             lieu=model.lieu,
             salaire_min=model.salaire_min,
             salaire_max=model.salaire_max,
-            competences_requises=model.competences_requises,
+            competences_requises=model.competences_requises or [],
             experience_requise=model.experience_requise,
             createur_id=model.createur_id,
             date_creation=model.date_creation,
@@ -42,7 +42,7 @@ class PostgresOffreRepository(OffreRepository):
             date_modification=model.date_modification,
             eligibilite_activee=model.eligibilite_activee,
             niveau_academique_minimum=model.niveau_academique_minimum,
-            langues_requises=model.langues_requises,
+            langues_requises=model.langues_requises or [],
             disponibilite_requise=model.disponibilite_requise,
         )
 
