@@ -1,10 +1,16 @@
 """DTOs pour la gestion des offres."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from ...domain.entities.offre import StatutOffre
-from ...domain.enums import TypeContrat, TypeOffre, TypeStage
+from ...domain.enums import (
+    Disponibilite,
+    NiveauAcademique,
+    TypeContrat,
+    TypeOffre,
+    TypeStage,
+)
 
 
 @dataclass
@@ -22,6 +28,10 @@ class CreerOffreDTO:
     salaire_max: Optional[float] = None
     competences_requises: Optional[list[str]] = None
     experience_requise: Optional[str] = None
+    eligibilite_activee: bool = False
+    niveau_academique_minimum: Optional[NiveauAcademique] = None
+    langues_requises: Optional[list[str]] = None
+    disponibilite_requise: Optional[Disponibilite] = None
 
 
 @dataclass
@@ -62,6 +72,10 @@ class OffreDTO:
     date_publication: Optional[str] = None  # ISO format
     date_cloture: Optional[str] = None  # ISO format
     nombre_candidatures: Optional[int] = None  # Compteur pour l'affichage
+    eligibilite_activee: bool = False
+    niveau_academique_minimum: Optional[NiveauAcademique] = None
+    langues_requises: list[str] = field(default_factory=list)
+    disponibilite_requise: Optional[Disponibilite] = None
 
 
 @dataclass

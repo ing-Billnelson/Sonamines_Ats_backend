@@ -1,11 +1,17 @@
 """Schemas Pydantic pour les offres."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
 
 from ....domain.entities.offre import StatutOffre
-from ....domain.enums import TypeContrat, TypeOffre, TypeStage
+from ....domain.enums import (
+    Disponibilite,
+    NiveauAcademique,
+    TypeContrat,
+    TypeOffre,
+    TypeStage,
+)
 
 
 class CreerOffreRequest(BaseModel):
@@ -22,9 +28,22 @@ class CreerOffreRequest(BaseModel):
     salaire_max: Optional[float] = Field(None, ge=0, description="Salaire maximum")
     competences_requises: List[str] = Field(default_factory=list, description="Liste des compétences requises")
     experience_requise: Optional[str] = Field(None, description="Expérience requise")
+    eligibilite_activee: bool = Field(
+        False, description="Active le scoring d'éligibilité des candidatures"
+    )
+    niveau_academique_minimum: Optional[NiveauAcademique] = Field(
+        None, description="Niveau académique minimum requis"
+    )
+    langues_requises: List[str] = Field(
+        default_factory=list, description="Langues requises"
+    )
+    disponibilite_requise: Optional[Disponibilite] = Field(
+        None, description="Disponibilité requise"
+    )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
             "example": {
                 "titre": "Ingénieur Logiciel Senior",
                 "description": "Nous recherchons un ingénieur logiciel senior pour rejoindre notre équipe de développement...",
@@ -38,7 +57,8 @@ class CreerOffreRequest(BaseModel):
                 "competences_requises": ["Python", "FastAPI", "PostgreSQL", "Docker"],
                 "experience_requise": "5 ans minimum en développement web"
             }
-        }
+        },
+    )
 
 
 class OffreResponse(BaseModel):
@@ -58,6 +78,10 @@ class OffreResponse(BaseModel):
     salaire_max: Optional[float]
     competences_requises: List[str]
     experience_requise: Optional[str]
+    eligibilite_activee: bool = False
+    niveau_academique_minimum: Optional[NiveauAcademique] = None
+    langues_requises: List[str] = Field(default_factory=list)
+    disponibilite_requise: Optional[Disponibilite] = None
     createur_nom_complet: str
     date_creation: str
     date_publication: Optional[str]

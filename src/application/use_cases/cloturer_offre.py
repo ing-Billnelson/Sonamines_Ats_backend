@@ -63,6 +63,10 @@ class CloturerOffreUseCase:
             salaire_max=offre.salaire_max,
             competences_requises=offre.competences_requises,
             experience_requise=offre.experience_requise,
+            eligibilite_activee=offre.eligibilite_activee,
+            niveau_academique_minimum=offre.niveau_academique_minimum,
+            langues_requises=offre.langues_requises,
+            disponibilite_requise=offre.disponibilite_requise,
             createur_nom_complet=createur_nom_complet,
             date_creation=offre.date_creation.isoformat(),
             date_publication=(

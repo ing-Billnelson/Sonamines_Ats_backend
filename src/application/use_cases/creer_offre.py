@@ -50,6 +50,10 @@ class CreerOffreUseCase:
             salaire_max=donnees.salaire_max,
             competences_requises=donnees.competences_requises,
             experience_requise=donnees.experience_requise,
+            eligibilite_activee=donnees.eligibilite_activee,
+            niveau_academique_minimum=donnees.niveau_academique_minimum,
+            langues_requises=donnees.langues_requises,
+            disponibilite_requise=donnees.disponibilite_requise,
         )
 
         offre_sauvegarde = await self._offre_repository.sauvegarder(offre)
@@ -80,6 +84,10 @@ class CreerOffreUseCase:
             salaire_max=offre_sauvegarde.salaire_max,
             competences_requises=offre_sauvegarde.competences_requises,
             experience_requise=offre_sauvegarde.experience_requise,
+            eligibilite_activee=offre_sauvegarde.eligibilite_activee,
+            niveau_academique_minimum=offre_sauvegarde.niveau_academique_minimum,
+            langues_requises=offre_sauvegarde.langues_requises,
+            disponibilite_requise=offre_sauvegarde.disponibilite_requise,
             createur_nom_complet=createur_nom_complet,
             date_creation=offre_sauvegarde.date_creation.isoformat(),
             date_publication=(

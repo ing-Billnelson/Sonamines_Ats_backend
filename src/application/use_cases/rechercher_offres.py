@@ -4,7 +4,13 @@ from typing import Any, Dict
 from uuid import UUID
 
 from ...domain.entities.offre import StatutOffre
-from ...domain.enums import TypeContrat, TypeOffre, TypeStage
+from ...domain.enums import (
+    Disponibilite,
+    NiveauAcademique,
+    TypeContrat,
+    TypeOffre,
+    TypeStage,
+)
 from ...domain.exceptions import OffreIntrouvableError
 from ...domain.ports import OffreRepository, SearchPort
 from ..dto import OffreDTO, RechercherOffresDTO
@@ -83,6 +89,18 @@ class RechercherOffresUseCase:
             salaire_max=hit.get("salaire_max"),
             competences_requises=competences,
             experience_requise=hit.get("experience_requise"),
+            eligibilite_activee=bool(hit.get("eligibilite_activee")) or False,
+            niveau_academique_minimum=(
+                NiveauAcademique(hit["niveau_academique_minimum"])
+                if hit.get("niveau_academique_minimum")
+                else None
+            ),
+            langues_requises=hit.get("langues_requises") or [],
+            disponibilite_requise=(
+                Disponibilite(hit["disponibilite_requise"])
+                if hit.get("disponibilite_requise")
+                else None
+            ),
             createur_nom_complet="",
             date_creation=hit.get("date_creation") or "",
             date_publication=hit.get("date_publication"),
@@ -110,6 +128,10 @@ class RechercherOffresUseCase:
             salaire_max=offre.salaire_max,
             competences_requises=offre.competences_requises,
             experience_requise=offre.experience_requise,
+            eligibilite_activee=offre.eligibilite_activee,
+            niveau_academique_minimum=offre.niveau_academique_minimum,
+            langues_requises=offre.langues_requises,
+            disponibilite_requise=offre.disponibilite_requise,
             createur_nom_complet="",
             date_creation=offre.date_creation.isoformat(),
             date_publication=(

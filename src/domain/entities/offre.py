@@ -79,6 +79,10 @@ class Offre:
         salaire_max: Optional[float] = None,
         competences_requises: Optional[list[str]] = None,
         experience_requise: Optional[str] = None,
+        eligibilite_activee: bool = False,
+        niveau_academique_minimum: Optional[NiveauAcademique] = None,
+        langues_requises: Optional[list[str]] = None,
+        disponibilite_requise: Optional[Disponibilite] = None,
     ) -> "Offre":
         """Crée une nouvelle offre avec les valeurs par défaut."""
         if type_offre == TypeOffre.EMPLOI and type_contrat is None:
@@ -105,6 +109,10 @@ class Offre:
             experience_requise=experience_requise,
             createur_id=createur_id,
             date_creation=datetime.utcnow(),
+            eligibilite_activee=eligibilite_activee,
+            niveau_academique_minimum=niveau_academique_minimum,
+            langues_requises=langues_requises or [],
+            disponibilite_requise=disponibilite_requise,
         )
 
     def publier(self) -> None:
